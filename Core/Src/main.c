@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-
+#include "HeartbeatTask.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -27,7 +27,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef enum { false, true } bool;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -43,7 +42,6 @@ typedef enum { false, true } bool;
 /* Private variables ---------------------------------------------------------*/
 osThreadId HeartbeatTaskHandle;
 
-bool isError = false;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -90,7 +88,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  setHeartbeatError(false);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -199,16 +197,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HeartbeatTask(void const *argument) {
-    for(;;) {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-        if(isError) {
-            osDelay(1000); // Швидке миготіння
-        } else {
-            osDelay(3000); // Повільне миготіння
-        }
-    }
-}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
