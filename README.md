@@ -1,5 +1,5 @@
-# GL ROS2 Rover ECU Software
-Welcome to the GitHub repository for the Electronic Control Unit (ECU) software designed for the 4WD rover developed under the GL ROS2 Rover robot project. This project focuses on implementing firmware for the ECU, playing a crucial role in controlling various aspects of the rover's operation.
+# KPI ROS2 Rover ECU Software
+Welcome to the GitHub repository for the Electronic Control Unit (ECU) software designed for the 4WD rover developed under the KPI ROS2 Rover robot project. This project focuses on implementing firmware for the ECU, playing a crucial role in controlling various aspects of the rover's operation.
 
 ## Main Features:
 **Microcontroller (MCU): STM32**
