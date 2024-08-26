@@ -1,0 +1,19 @@
+/*
+ * heartbeat.h
+ *
+ *  Created on: Aug 23, 2024
+ *      Author: Victoria
+ */
+
+#ifndef INC_HEARTBEAT_H_
+#define INC_HEARTBEAT_H_
+
+typedef enum {
+	normal = 500,
+	error = 1500
+} heartbeatMode;		//numbers are periods of LED blinking
+
+void HeartbeatInit(void);
+void HeartbeatModeSwitch(heartbeatMode mode);
+
+#endif /* INC_HEARTBEAT_H_ */

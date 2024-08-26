@@ -1,0 +1,17 @@
+11:22:00 **** Incremental Build of configuration Debug for project ECU_sw ****
+make -j8 all 
+arm-none-eabi-gcc "../Core/Src/heartbeat.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/heartbeat.d" -MT"Core/Src/heartbeat.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/heartbeat.o"
+arm-none-eabi-gcc -o "ECU_sw.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\power\OneDrive\Dokumente\KPI-ROVER\ecu_sw\ECU_sw\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ECU_sw.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: ECU_sw.elf
+ 
+arm-none-eabi-size  ECU_sw.elf 
+arm-none-eabi-objdump -h -S ECU_sw.elf  > "ECU_sw.list"
+   text	   data	    bss	    dec	    hex	filename
+  19560	     24	  20424	  40008	   9c48	ECU_sw.elf
+Finished building: default.size.stdout
+ 
+Finished building: ECU_sw.list
+ 
+
+11:22:01 Build Finished. 0 errors, 0 warnings. (took 928ms)
+

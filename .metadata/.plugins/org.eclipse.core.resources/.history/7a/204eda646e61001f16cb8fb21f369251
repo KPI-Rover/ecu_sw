@@ -1,0 +1,52 @@
+//#include "heartbeat.h"
+#include "timers.h"
+
+TimerCallbackFunction_t LedOn(TimerHandle_t xTimer);
+TimerCallbackFunction_t LedOff(TimerHandle_t xTimer);
+
+static TimerHandle_t ledOnTimer = NULL;
+static TimerHandle_t ledOffTimer = NULL;
+
+int HeartbeatInit(void){
+	/*
+	 * Important! Should be called in one of the tasks (after scheduler was started), otherwise two timers
+	 * will be started at the same time, because the xTicksToWait parameter in xTimerStart() will be
+	 * ignored by FreeRTOS. See the documentation for xTimerStart() in timers.h.
+	 *
+	 * returns 1 in case of error of timer creation or starting
+	 *         0 in case of success
+	 */
+	ledOnTimer = xTimerCreate(	"Heartbeat LED ON timer",
+							   normal / portTICK_PERIOD_MS,
+							   pdTrue,
+							   1,
+							   LedOn );
+	ledOffTimer = xTimerCreate(	"Heartbeat LED OFF timer",
+							   normal / portTICK_PERIOD_MS,
+							   pdTrue,
+							   2,
+							   LedOff );
+
+	if (ledOnTimer != NULL && ledOffTimer != NULL){
+		if (xTimerStart( ledOnTimer, 0 ) != pdFAIL &&
+			xTimerStart( ledOffTimer, LED_FLASH_DURATION_MS / portTICK_PERIOD_MS) != pdFAIL){
+				return 0;
+			}
+
+	}
+	return 1;
+}
+
+void HeartbeatModeSwitch(heartbeatMode mode){
+
+}
+
+TimerCallbackFunction_t LedOn(TimerHandle_t xTimer){
+
+}
+
+TimerCallbackFunction_t LedOff(TimerHandle_t xTimer);{
+
+}
+
+

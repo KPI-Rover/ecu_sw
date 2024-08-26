@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;ECU_sw/Core/Src/heartbeat&apos; to &apos;heartbeat.c&apos;" description="Rename resource &apos;heartbeat&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/heartbeat" name="heartbeat.c" stamp="1724414464863" updateReferences="true"/>
+</session>

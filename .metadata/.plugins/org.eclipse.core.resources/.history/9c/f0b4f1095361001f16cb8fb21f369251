@@ -1,0 +1,12 @@
+#include "heartbeat.h"
+#include "timers.h"
+
+void HeartbeatInit(void){
+	//define timer
+	//start timer in normal mode
+};
+void HeartbeatModeSwitch(heartbeatMode mode){
+	//change timer period
+};
+
+
