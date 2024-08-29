@@ -41,9 +41,9 @@ int HeartbeatModeSwitch(heartbeatMode mode){
 	 * returns 1 in case of error of changing timers' periods
 	 *         0 in case of success
 	 */
-	BaseType_t status1 = xTimerChangePeriod( ledOnTimer, MS_TO_TICKS(mode), 1);
+	BaseType_t status1 = xTimerChangePeriod( ledOnTimer, MS_TO_TICKS(mode), 5);
 	osDelay(MS_TO_TICKS(LED_FLASH_DURATION_MS));
-	BaseType_t status2 = xTimerChangePeriod( ledOffTimer, MS_TO_TICKS(mode), 1);
+	BaseType_t status2 = xTimerChangePeriod( ledOffTimer, MS_TO_TICKS(mode), 5);
 	if (status1 == pdPASS && status2 == pdPASS){
 		return 0;
 	}

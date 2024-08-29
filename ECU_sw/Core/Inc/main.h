@@ -61,7 +61,9 @@ void Error_Handler(void);
 #define LED_RED_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
+#define MAX_LOG_DATA_LENGTH 128
 
+#define UART3_DMA_TX_complete_event_flag 0x00000001U
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
