@@ -1,0 +1,4 @@
+../Core/Src/heartbeat.c:16:5:HeartbeatInit	5
+../Core/Src/heartbeat.c:36:5:HeartbeatModeSwitch	3
+../Core/Src/heartbeat.c:53:6:HeartbeatLedOn	1
+../Core/Src/heartbeat.c:57:6:HeartbeatLedOff	1

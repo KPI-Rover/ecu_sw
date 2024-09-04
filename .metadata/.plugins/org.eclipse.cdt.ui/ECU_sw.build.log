@@ -1,0 +1,10 @@
+08:57:07 **** Incremental Build of configuration Debug for project ECU_sw ****
+make -j8 all 
+arm-none-eabi-size  ECU_sw.elf 
+   text	   data	    bss	    dec	    hex	filename
+  29868	    104	  21072	  51044	   c764	ECU_sw.elf
+Finished building: default.size.stdout
+ 
+
+08:57:07 Build Finished. 0 errors, 0 warnings. (took 245ms)
+

@@ -1,0 +1,57 @@
+#include <stddef.h>
+#include "heartbeat.h"
+#include "FreeRTOS.h"
+#include "timers.h"
+
+TimerCallbackFunction_t LedOn(TimerHandle_t xTimer);
+TimerCallbackFunction_t LedOff(TimerHandle_t xTimer);
+
+static TimerHandle_t ledOnTimer = NULL;
+static TimerHandle_t ledOffTimer = NULL;
+
+int HeartbeatInit(void){
+	/*
+	 * Creates and starts software timers for LED blinking.
+	 * returns 1 in case of error of timer creation or starting
+	 *         0 in case of success
+	 */
+	ledOnTimer = xTimerCreate(	"Heartbeat LED ON timer",
+							   normal / portTICK_PERIOD_MS,
+							   pdTRUE,
+							   (void * const) 1,
+							   LedOn );
+	ledOffTimer = xTimerCreate(	"Heartbeat LED OFF timer",
+							   normal / portTICK_PERIOD_MS,
+							   pdTRUE,
+							   (void * const)2,
+							   LedOff );
+
+	if (ledOnTimer != NULL && ledOffTimer != NULL){
+		if (xTimerStart( ledOnTimer, 0 ) != pdFAIL && xTimerPendFunctionCall( (PendedFunction_t) xTimerStart,
+													  (void *) ledOffTimer, 1, LED_FLASH_DURATION_MS / portTICK_PERIOD_MS ) != pdFALSE){
+				return 0;
+			}
+
+	}
+	return 1;
+}
+
+void HeartbeatModeSwitch(heartbeatMode mode){
+	/*
+	 * Switches heartbeat LED blinking mode.
+	 * Important! Must be called after the scheduler was started
+	 */
+	xTimerChangePeriod( ledOnTimer, mode / portTICK_PERIOD_MS, 1);
+	osDelay(LED_FLASH_DURATION_MS / portTICK_PERIOD_MS);
+	xTimerChangePeriod( ledOffTimer, mode / portTICK_PERIOD_MS, 1);
+}
+
+TimerCallbackFunction_t LedOn(TimerHandle_t xTimer){
+	HAL_GPIO_WritePin(HEARTBEAT_LED_Port, HEARTBEAT_LED_Pin, GPIO_PIN_SET);
+}
+
+TimerCallbackFunction_t LedOff(TimerHandle_t xTimer){
+	HAL_GPIO_WritePin(HEARTBEAT_LED_Port, HEARTBEAT_LED_Pin, GPIO_PIN_RESET);
+}
+
+
