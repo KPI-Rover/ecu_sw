@@ -1,23 +1,9 @@
 # KPI ROS2 Rover ECU Software
-Welcome to the GitHub repository for the Electronic Control Unit (ECU) software designed for the 4WD rover developed under the KPI ROS2 Rover robot project. This project focuses on implementing firmware for the ECU, playing a crucial role in controlling various aspects of the rover's operation.
+Ласкаво просимо до репозиторію GitHub для програмного забезпечення контролера шасію для чотириколісного ровера в рамках проєкту робота KPI Rover.
 
-## Main Features:
-**Microcontroller (MCU): STM32**
-
-The project utilizes the STM32 microcontroller to drive the functionalities of the Electronic Control Unit.
-
-**Motor Control:**
-
-The ECU drives the 4 DC motors in the 4WD rover using L298N motor drivers, ensuring precise control and power distribution.
-
-**Encoder Integration:**
-
-To accurately track motion, the ECU reads signals from 4 encoders, measuring both speed and distance traveled by the rover.
-
-**Battery Monitoring:**
-
-The ECU reads and monitors the battery voltage level, enabling proactive measures in case of voltage fluctuations or low battery conditions.
-
-**ROS2 Communication:**
-
-To integrate the rover into the Robot Operating System 2 (ROS2) framework, the ECU implements a robust communication protocol over a serial interface. This facilitates data exchange and command reception, allowing the rover to be part of a larger ROS2-based robotic ecosystem.
+## Основні функції:
+1. **Мікроконтролер (MCU): STM32** Проєкт використовує мікроконтролер STM32 для забезпечення функціональності контролера.
+2. **Управління моторами:** Контролер керує 4 двигунами постійного струму в чотириколісному роверi за допомогою драйверів L298N.
+3. **Інтеграція енкодерів:** Для точного відстеження руху контролер зчитує сигнали від 4 енкодерів, вимірюючи швидкість і пройдену відстань ровера.
+4. **Моніторинг батареї:** Контролер зчитує та контролює рівень напруги акумулятора, дозволяючи завчасно реагувати на зміни напруги або низький заряд батареї.
+5. **Комунікація ROS2:** Для інтеграції ровера в систему ROS2 контролер реалізує комунікаційний протокол через послідовний інтерфейс. 
