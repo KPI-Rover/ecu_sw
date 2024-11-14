@@ -1,9 +1,9 @@
 # KPI ROS2 Rover ECU Software
-Ласкаво просимо до репозиторію GitHub для програмного забезпечення контролера шасію для чотириколісного ровера в рамках проєкту робота KPI Rover.
+Welcome to the GitHub repository for the chassis controller software for the four-wheel rover as part of the KPI Rover robot project.
 
-## Основні функції:
-1. **Мікроконтролер (MCU): STM32** Проєкт використовує мікроконтролер STM32 для забезпечення функціональності контролера.
-2. **Управління моторами:** Контролер керує 4 двигунами постійного струму в чотириколісному роверi за допомогою драйверів L298N.
-3. **Інтеграція енкодерів:** Для точного відстеження руху контролер зчитує сигнали від 4 енкодерів, вимірюючи швидкість і пройдену відстань ровера.
-4. **Моніторинг батареї:** Контролер зчитує та контролює рівень напруги акумулятора, дозволяючи завчасно реагувати на зміни напруги або низький заряд батареї.
-5. **Комунікація ROS2:** Для інтеграції ровера в систему ROS2 контролер реалізує комунікаційний протокол через послідовний інтерфейс. 
+## Main Features:
+1. **Microcontroller (MCU): STM32** The project utilizes an STM32 microcontroller to provide controller functionality.
+2. **Motor Control:** The controller manages 4 DC motors in the four-wheel rover using L298N drivers.
+3. **Encoder Integration:** For precise motion tracking, the controller reads signals from 4 encoders, measuring the rover’s speed and distance traveled.
+4. **Battery Monitoring:** The controller reads and monitors the battery voltage level, allowing for timely responses to voltage changes or low battery warnings.
+5. **ROS2 Communication:** To integrate the rover into the ROS2 system, the controller implements a communication protocol via a serial interface.
