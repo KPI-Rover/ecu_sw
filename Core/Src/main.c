@@ -71,12 +71,6 @@ static void MX_TIM5_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_UART4_Init(void);
-<<<<<<< Updated upstream
-
-void SetMotorPWM(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty);
-void SetMotorDirection(GPIO_TypeDef* portF, uint16_t pinF, GPIO_TypeDef* portR, uint16_t pinR, int direction);
-=======
->>>>>>> Stashed changes
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -126,26 +120,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-<<<<<<< Updated upstream
-  HAL_TIM_PWM_Start(&htim3, TIM1_CH1_PWM1);
-  HAL_TIM_PWM_Start(&htim3, TIM1_CH2_PWM2);
-  HAL_TIM_PWM_Start(&htim3, TIM1_CH3_PWM3);
-  HAL_TIM_PWM_Start(&htim3, TIM1_CH4_PWM4);
-
-  SetMotorPWM(&htim3, TIM1_CH1_PWM1, 500);
-  SetMotorPWM(&htim3, TIM1_CH2_PWM2, 500);
-  SetMotorPWM(&htim3, TIM1_CH3_PWM3, 500);
-  SetMotorPWM(&htim3, TIM1_CH4_PWM4, 500);
-
-  HAL_GPIO_WritePin(GPIOB, F1, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOB, R1, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, F2, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOB, R2, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, F3, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOB, R3, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, F4, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOB, R4, GPIO_PIN_RESET);
-=======
   HAL_TIM_PWM_Start(&htim3, MOTOR1_PWM_CHANNEL);
   HAL_TIM_PWM_Start(&htim3, MOTOR2_PWM_CHANNEL);
   HAL_TIM_PWM_Start(&htim3, MOTOR3_PWM_CHANNEL);
@@ -160,7 +134,6 @@ int main(void)
   SetMotorDirection(2, 1); // Motor 2 forward
   SetMotorDirection(3, 1); // Motor 3 forward
   SetMotorDirection(4, 1); // Motor 4 forward
->>>>>>> Stashed changes
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -179,53 +152,8 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-<<<<<<< Updated upstream
-void SetMotorPWM(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty) {
-    __HAL_TIM_SET_COMPARE(htim, channel, duty);
-}
-
-void SetMotorDirection(GPIO_TypeDef* portF1, uint16_t pinF1,
-					   GPIO_TypeDef* portR1, uint16_t pinR1,
-					   
-					   GPIO_TypeDef* portF2, uint16_t pinF2, 
-					   GPIO_TypeDef* portR2, uint16_t pinR2,
-                       int direction) {
-    if (direction == 1) { // Forward
-        HAL_GPIO_WritePin(portF1, pinF1, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(portR1, pinR1, GPIO_PIN_RESET);
-
-        HAL_GPIO_WritePin(portF2, pinF2, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_RESET);
-    } else if (direction == -1) { // Reverse
-        HAL_GPIO_WritePin(portF1, pinF1, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(portR1, pinR1, GPIO_PIN_SET);
-
-        HAL_GPIO_WritePin(portF2, pinF2, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_SET);
-    } else if (direction == 2) { // Left
-        HAL_GPIO_WritePin(portF1, pinF1, GPIO_PIN_RESET); // Left motor backward
-        HAL_GPIO_WritePin(portR1, pinR1, GPIO_PIN_SET);
-
-        HAL_GPIO_WritePin(portF2, pinF2, GPIO_PIN_SET);   // Right motor forward
-        HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_RESET);
-    } else if (direction == 3) { // Right
-        HAL_GPIO_WritePin(portF1, pinF1, GPIO_PIN_SET);   // Left motor forward
-        HAL_GPIO_WritePin(portR1, pinR1, GPIO_PIN_RESET);
-
-        HAL_GPIO_WritePin(portF2, pinF2, GPIO_PIN_RESET); // Right motor backward
-        HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_SET);
-    } else { // Stop
-        HAL_GPIO_WritePin(portF1, pinF1, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(portR1, pinR1, GPIO_PIN_RESET);
-
-        HAL_GPIO_WritePin(portF2, pinF2, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_RESET);
-    }
-}
-=======
 
 
->>>>>>> Stashed changes
 
 /**
   * @brief System Clock Configuration
