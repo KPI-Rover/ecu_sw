@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "hal_motor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,9 +71,12 @@ static void MX_TIM5_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_UART4_Init(void);
+<<<<<<< Updated upstream
 
 void SetMotorPWM(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty);
 void SetMotorDirection(GPIO_TypeDef* portF, uint16_t pinF, GPIO_TypeDef* portR, uint16_t pinR, int direction);
+=======
+>>>>>>> Stashed changes
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -123,6 +126,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+<<<<<<< Updated upstream
   HAL_TIM_PWM_Start(&htim3, TIM1_CH1_PWM1);
   HAL_TIM_PWM_Start(&htim3, TIM1_CH2_PWM2);
   HAL_TIM_PWM_Start(&htim3, TIM1_CH3_PWM3);
@@ -141,12 +145,32 @@ int main(void)
   HAL_GPIO_WritePin(GPIOB, R3, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOB, F4, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOB, R4, GPIO_PIN_RESET);
+=======
+  HAL_TIM_PWM_Start(&htim3, MOTOR1_PWM_CHANNEL);
+  HAL_TIM_PWM_Start(&htim3, MOTOR2_PWM_CHANNEL);
+  HAL_TIM_PWM_Start(&htim3, MOTOR3_PWM_CHANNEL);
+  HAL_TIM_PWM_Start(&htim3, MOTOR4_PWM_CHANNEL);
+
+  SetMotorPWM(&htim3, MOTOR1_PWM_CHANNEL, 500);
+  SetMotorPWM(&htim3, MOTOR2_PWM_CHANNEL, 500);
+  SetMotorPWM(&htim3, MOTOR3_PWM_CHANNEL, 500);
+  SetMotorPWM(&htim3, MOTOR4_PWM_CHANNEL, 500);
+
+  SetMotorDirection(1, 1); // Motor 1 forward
+  SetMotorDirection(2, 1); // Motor 2 forward
+  SetMotorDirection(3, 1); // Motor 3 forward
+  SetMotorDirection(4, 1); // Motor 4 forward
+>>>>>>> Stashed changes
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      HAL_Delay(1000);
+      SetMotorDirection(1, -1);
+      HAL_Delay(1000);
+      SetMotorDirection(1, 0);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -155,6 +179,7 @@ int main(void)
   /* USER CODE END 3 */
 }
 
+<<<<<<< Updated upstream
 void SetMotorPWM(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty) {
     __HAL_TIM_SET_COMPARE(htim, channel, duty);
 }
@@ -197,6 +222,10 @@ void SetMotorDirection(GPIO_TypeDef* portF1, uint16_t pinF1,
         HAL_GPIO_WritePin(portR2, pinR2, GPIO_PIN_RESET);
     }
 }
+=======
+
+
+>>>>>>> Stashed changes
 
 /**
   * @brief System Clock Configuration
