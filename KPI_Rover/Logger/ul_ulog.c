@@ -10,11 +10,11 @@
 #include "portable.h"
 #include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #define LOG_QUEUE_LENGTH    10
 #define MAX_LOG_MESSAGE_SIZE 256
 
-// Forward declaration
 static void ulogTask(void *argument);
 
 static osThreadId_t ulogTaskHandle;
@@ -31,15 +31,14 @@ static const osThreadAttr_t ulogTask_attributes = {
 
 void ul_ulog_init()
 { 
-  // Initialize the uLog queue to receive and store log messages
-	xULogQueue = xQueueCreateStatic(LOG_QUEUE_LENGTH, MAX_LOG_MESSAGE_SIZE,
+
+  xULogQueue = xQueueCreateStatic(LOG_QUEUE_LENGTH, MAX_LOG_MESSAGE_SIZE,
                                ucUlogQueueStorage, &xUlogQueueBuffer);
   if (xULogQueue == NULL)
   {
     Error_Handler();
   }
 
-  // Create the uLog task
   ulogTaskHandle = osThreadNew(ulogTask, NULL, &ulogTask_attributes);
   if  (ulogTaskHandle == NULL)
   {
@@ -47,27 +46,36 @@ void ul_ulog_init()
   }
 }
 
-void ul_ulog_send(ulog_level_t level, char *msg)
+void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
 {
   if (xULogQueue == NULL || msg == NULL)
   {
     return;
   }
 
-  // Use local buffer instead of static to avoid thread safety issues
   char logBuffer[MAX_LOG_MESSAGE_SIZE];
   int len;
   size_t msg_len = strlen(msg);
 
-  // Truncate message if too long, leaving space for timestamp and level
-  if (msg_len > (MAX_LOG_MESSAGE_SIZE - 50))
+  // Extract just the filename from the full path
+  const char *fbasename = strrchr(filename, '/');
+  if (fbasename) {
+    fbasename++; // Skip the '/'
+  } else {
+    fbasename = filename; // No path separator found
+  }
+
+  // Truncate message if too long, leaving space for timestamp, level, and filename
+  if (msg_len > (MAX_LOG_MESSAGE_SIZE - 60))
   {
-    msg_len = MAX_LOG_MESSAGE_SIZE - 50;
+    msg_len = MAX_LOG_MESSAGE_SIZE - 60;
   }
 
   TickType_t currentTime = xTaskGetTickCount();
-  len = snprintf(logBuffer, sizeof(logBuffer), "[%lu] [%s] %.*s\r\n",
-                 (unsigned long)currentTime, ulog_level_name(level), 
+  len = snprintf(logBuffer, sizeof(logBuffer), "[%lu][%s][%s] %.*s\r\n",
+                 (unsigned long)currentTime,
+                 ulog_level_name(level),
+                 fbasename,
                  (int)msg_len, msg);
 
   // Ensure buffer is always null-terminated
@@ -95,7 +103,7 @@ static void ulogTask(void *argument)
   // TODO: Try to get rid of this delay
   // Wait a bit for USB to initialize before starting logging
   osDelay(2000);
-  
+
   ULOG_INIT();
   ULOG_SUBSCRIBE(ul_ulog_send, ULOG_DEBUG_LEVEL);
 

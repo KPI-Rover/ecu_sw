@@ -115,7 +115,7 @@ const char *ulog_level_name(ulog_level_t severity) {
   }
 }
 
-void ulog_message(ulog_level_t severity, const char *fmt, ...) {
+void ulog_message(const char *filename, ulog_level_t severity, const char *fmt, ...) {
   // Do not evaluate the log message if it will never be logged
   if (severity < s_lowest_log_level){
     return;
@@ -130,7 +130,7 @@ void ulog_message(ulog_level_t severity, const char *fmt, ...) {
   for (i=0; i<ULOG_MAX_SUBSCRIBERS; i++) {
     if (s_subscribers[i].fn != NULL) {
       if (severity >= s_subscribers[i].threshold) {
-        s_subscribers[i].fn(severity, s_message);
+        s_subscribers[i].fn(severity, filename, s_message);
       }
     }
   }
