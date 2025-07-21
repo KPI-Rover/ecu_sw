@@ -1,6 +1,10 @@
 /**
 MIT License
 
+Copyright (c) 2024 KPI Rover Project
+
+This file contains modifications and extensions to the original uLog library.
+Original uLog library:
 Copyright (c) 2019 R. Dunbar Poor <rdpoor@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
