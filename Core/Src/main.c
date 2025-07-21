@@ -24,6 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
+#include "ul_ulog.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -119,6 +121,15 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  
+  // Small delay to ensure all peripherals are stable before USB init
+  HAL_Delay(100);
+
+  // Initialize USB before starting scheduler
+  MX_USB_DEVICE_Init();
+  
+  // Additional delay for USB enumeration
+  HAL_Delay(500);
 
   /* USER CODE END 2 */
 
@@ -146,7 +157,10 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+
+  ul_ulog_init();
+
+  
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -160,6 +174,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -611,14 +626,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
-	  char msg[] = "Hello from FreeRTOS task!\r\n";
-	  CDC_Transmit_FS((uint8_t*)msg, strlen(msg));
+	  ULOG_DEBUG("MAIN: Hello from default task");
 	  osDelay(1000); // Wait for 1 second
   }
   /* USER CODE END 5 */
