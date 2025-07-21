@@ -128,8 +128,6 @@ int main(void)
   // Initialize USB before starting scheduler
   MX_USB_DEVICE_Init();
   
-  // Additional delay for USB enumeration
-  HAL_Delay(500);
 
   /* USER CODE END 2 */
 
@@ -626,13 +624,14 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
+  uint32_t count = 0;
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
-	  ULOG_DEBUG("MAIN: Hello from default task");
-	  osDelay(1000); // Wait for 1 second
+	  ULOG_DEBUG("Hello from default task %d", count++);
+	  osDelay(101); // Wait for 1 second
   }
   /* USER CODE END 5 */
 }

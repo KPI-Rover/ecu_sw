@@ -8,7 +8,7 @@ extern "C" {
 #include "ulog.h"
 
 void ul_ulog_init();
-void ul_ulog_send(ulog_level_t level, char *msg);
+void ul_ulog_send(ulog_level_t level, const char *filename, char *msg);
 
 #ifdef __cplusplus
 }
