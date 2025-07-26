@@ -3,12 +3,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define BUZZER_PIN_ERROR 0x1U
-#define BUZZER_NOT_INITIALIZED_ERROR 0x2U
-#define BUZZER_HAL_ERROR 0x3U
-#define BUZZER_VALUE_ERROR 0x4U
-#define BUZZER_ZERO_ONTIME_ERROR 0x5U
-#define BUZZER_ZERO_OFFTIME_ERROR 0x6U
+#include "driver.h"
 
 #define CHECK_ERROR(condition, err_value) do { \
 		if (condition) { \
