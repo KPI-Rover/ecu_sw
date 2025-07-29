@@ -116,8 +116,12 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
             for (size_t i = 0; i < channel_count; i++) {
                 registered_callback(adc_channels[i], adc_filtered_values[i]);
             }
-            ULOG_DEBUG("ADC callback invoked");
+            //ULOG_DEBUG("ADC callback invoked");
         }
+
+        HAL_ADC_Stop_DMA(&hadc1);
+        osDelay(100);
+        HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_raw_values, channel_count);
 
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }

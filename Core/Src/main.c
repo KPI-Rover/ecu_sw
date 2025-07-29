@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
+#include "../../KPI_Rover/ADC/adc_driver.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -60,7 +61,7 @@ TIM_HandleTypeDef htim3;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
@@ -85,6 +86,10 @@ void StartDefaultTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+static void adc_callback(uint8_t channel, uint16_t value) {
+    //ULOG_INFO("Callback - Channel: %d, Filtered: %u", channel, value);
+}
 
 /* USER CODE END 0 */
 
@@ -260,8 +265,8 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
-  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
@@ -272,16 +277,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = 2;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -658,14 +654,36 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-  static uint32_t count = 0;
   /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-	  ULOG_DEBUG("Hello from default task %d", count++);
-	  osDelay(101); // Wait for 1 second
-  }
+  const uint8_t channels[] = {2};
+
+     ADC_Driver_Init(channels, 1);
+     ADC_Driver_RegisterCallback(adc_callback);
+     ADC_Driver_Calibrate();
+
+     adc_calibration_t cal = {
+         .raw_low = 0,
+         .raw_high = 4095,
+         .phys_low = 0.0f,
+         .phys_high = 3.3f
+     };
+
+     ADC_Driver_SetCalibration(2, cal);
+     ADC_Driver_Start();
+
+     /* USER CODE END StartDefaultTask */
+
+     for(;;) {
+
+    	 uint16_t filtered = ADC_Driver_GetLastValue(channels[0]);
+    	 float calibrated = ADC_Driver_GetCalibratedValue(channels[0]);
+
+    	 int calibrated_mv = (int)(calibrated * 1000);
+    	 ULOG_INFO("FILTERED: %u, CALIB: %d mV", filtered, calibrated_mv);
+
+    	 osDelay(1000);
+     }
+
   /* USER CODE END 5 */
 }
 
