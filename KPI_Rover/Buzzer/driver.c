@@ -86,6 +86,8 @@ unsigned int Buzzer_Pulse(const unsigned int on_time_ms, const unsigned int peri
 	const TickType_t off_time_ticks = pdMS_TO_TICKS(period_time_ms) - on_time_ticks;
 	CHECK_ERROR(!off_time_ticks, BUZZER_ZERO_OFFTIME_ERROR);
 
+	const TickType_t last_on_time_ticks = pdMS_TO_TICKS(total_active_time_ms % period_time_ms);
+
 	const unsigned int total_beep_amount = total_active_time_ms / period_time_ms;
 
 	for (unsigned int i = 0; i < total_beep_amount; i++)
@@ -94,6 +96,13 @@ unsigned int Buzzer_Pulse(const unsigned int on_time_ms, const unsigned int peri
 		vTaskDelay(on_time_ticks);
 		Buzzer_Disable();
 		vTaskDelay(off_time_ticks);
+	}
+
+	if (last_on_time_ticks)
+	{
+		Buzzer_Enable();
+		vTaskDelay(last_on_time_ticks);
+		Buzzer_Disable();
 	}
 
 fail:
