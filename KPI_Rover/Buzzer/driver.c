@@ -16,11 +16,27 @@ static GPIO_TypeDef *GPIO_buzzer_port;
 static uint16_t GPIO_buzzer_pin;
 static int buzzer_initialized;
 
+static unsigned int count_bits_16bit(uint16_t value)
+{
+	unsigned int mask = 0x8000,
+		     result = 0;
+
+	while (mask)
+	{
+		if (value & mask)
+			result++;
+
+		mask >>= 1;
+	}
+
+	return result;
+}
+
 unsigned int Buzzer_ConfigurePort(const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin)
 {
 	unsigned int errors = 0;
 
-	CHECK_ERROR(gpio_pin > 15, BUZZER_PIN_ERROR);
+	CHECK_ERROR(count_bits_16bit(gpio_pin) != 1, BUZZER_PIN_ERROR);
 
 	GPIO_buzzer_port = (GPIO_TypeDef *) gpio_port;
 	GPIO_buzzer_pin = (uint16_t) gpio_pin;
