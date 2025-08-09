@@ -9,32 +9,38 @@ typedef struct {
     uint16_t times;
     uint16_t on_time;
     uint16_t off_time;
-} LedTaskParams_t;
+} LedParams_t;
 
 static Led_t leds[MAX_LEDS];
 static uint8_t ledCount = 0;
 
 void LedDriver_Init(Led_t* inputLeds, uint8_t count) {
+	if (inputLeds == NULL || count == 0) return;
+
     if (count > MAX_LEDS) count = MAX_LEDS;
     ledCount = count;
+
     for (uint8_t i = 0; i < count; i++) {
+    	if (inputLeds[i].port == NULL) continue;
         leds[i] = inputLeds[i];
         HAL_GPIO_WritePin(leds[i].port, leds[i].pin, GPIO_PIN_RESET);
     }
 }
 
 void LedDriver_On(uint8_t ledIndex) {
+    if (leds[ledIndex].port == NULL) return;
     if (ledIndex < ledCount)
         HAL_GPIO_WritePin(leds[ledIndex].port, leds[ledIndex].pin, GPIO_PIN_SET);
 }
 
 void LedDriver_Off(uint8_t ledIndex) {
+    if (leds[ledIndex].port == NULL) return;
     if (ledIndex < ledCount)
         HAL_GPIO_WritePin(leds[ledIndex].port, leds[ledIndex].pin, GPIO_PIN_RESET);
 }
 
 static void LedControlTask(void* argument) {
-    LedTaskParams_t* params = (LedTaskParams_t*)argument;
+    LedParams_t* params = (LedParams_t*)argument;
 
     uint16_t count = params->times;
     do {
@@ -49,9 +55,9 @@ static void LedControlTask(void* argument) {
 }
 
 void LedDriver_Blink(uint8_t ledIndex, uint16_t times) {
-    if (ledIndex >= ledCount) return;
+    if (ledIndex >= ledCount || leds[ledIndex].port == NULL) return;
 
-    LedTaskParams_t* params = pvPortMalloc(sizeof(LedTaskParams_t));
+    LedParams_t* params = pvPortMalloc(sizeof(LedParams_t));
     if (params == NULL) return;
 
     params->index = ledIndex;
@@ -63,9 +69,9 @@ void LedDriver_Blink(uint8_t ledIndex, uint16_t times) {
 }
 
 void LedDriver_Flash(uint8_t ledIndex, uint16_t times) {
-    if (ledIndex >= ledCount) return;
+    if (ledIndex >= ledCount || leds[ledIndex].port == NULL) return;
 
-    LedTaskParams_t* params = pvPortMalloc(sizeof(LedTaskParams_t));
+    LedParams_t* params = pvPortMalloc(sizeof(LedParams_t));
     if (params == NULL) return;
 
     params->index = ledIndex;
