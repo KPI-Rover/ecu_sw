@@ -65,7 +65,7 @@ void LedDriver_Blink(uint8_t ledIndex, uint16_t times) {
     params->on_time = 500;  // 50% duty cycle: 500ms ON
     params->off_time = 500; // 50% duty cycle: 500ms OFF
 
-    xTaskCreate(LedControlTask, "LedBlink", 128, params, osPriorityLow, NULL);
+    xTaskCreate(LedControlTask, "LedBlink", 128, params, osPriorityHigh, NULL);
 }
 
 void LedDriver_Flash(uint8_t ledIndex, uint16_t times) {
@@ -79,5 +79,5 @@ void LedDriver_Flash(uint8_t ledIndex, uint16_t times) {
     params->on_time = 100;  // 10% duty cycle: 100ms ON
     params->off_time = 900; // 10% duty cycle: 900ms OFF
 
-    xTaskCreate(LedControlTask, "LedFlash", 128, params, osPriorityLow, NULL);
+    xTaskCreate(LedControlTask, "LedFlash", 128, params, osPriorityHigh, NULL);
 }
