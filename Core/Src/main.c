@@ -20,7 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "usb_device.h"
-#include "../../KPI_Rover/ADC/adc_driver.h"
+#include "../../KPI_Rover/ADC/adc_manager.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -652,40 +652,18 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN 5 */
-  const uint8_t channels[] = {2};
+	/* USER CODE BEGIN 5 */
 
-     ADC_Driver_Init(channels, 1);
-     ADC_Driver_RegisterCallback(adc_callback);
-     ADC_Driver_Calibrate();
+	 ADC_Manager_Task(NULL);
 
-     adc_calibration_t cal = {
-         .raw_low = 0,
-         .raw_high = 4095,
-         .phys_low = 0.0f,
-         .phys_high = 3.3f
-     };
+	  /* Infinite loop */
+	  for(;;)
+	  {
 
-     ADC_Driver_SetCalibration(2, cal);
-     ADC_Driver_Start();
-
-     /* USER CODE END StartDefaultTask */
-
-     for(;;) {
-
-    	 uint16_t filtered = ADC_Driver_GetLastValue(channels[0]);
-    	 float calibrated = ADC_Driver_GetCalibratedValue(channels[0]);
-
-    	 int calibrated_mv = (int)(calibrated * 1000);
-    	 ULOG_INFO("FILTERED: %u, CALIB: %d mV", filtered, calibrated_mv);
-
-    	 osDelay(1000);
-     }
-
-  /* USER CODE END 5 */
+	  }
+	  /* USER CODE END 5 */
 }
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
