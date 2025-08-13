@@ -36,6 +36,8 @@ void LedManager_Init() {
 
 void LedManager_Task(void *argument) {
 
+	LedManager_Init();
+
 	for (;;) {
 		for (uint8_t i = 0; i < NUM_LEDS; i++) {
 			switch (settings[i].mode) {

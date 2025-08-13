@@ -105,8 +105,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  LedManager_Init();
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
