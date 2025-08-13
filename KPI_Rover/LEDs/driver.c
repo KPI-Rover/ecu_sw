@@ -42,16 +42,19 @@ void LedDriver_Off(uint8_t ledIndex) {
 static void LedControlTask(void* argument) {
     LedParams_t* params = (LedParams_t*)argument;
 
-    uint16_t count = params->times;
-    do {
-        LedDriver_On(params->index);
-        osDelay(params->on_time);
-        LedDriver_Off(params->index);
-        osDelay(params->off_time);
-    } while (count == 0 || --count > 0);
+    uint16_t count;
 
-    vPortFree(argument);
-    vTaskDelete(NULL);
+    for (;;) {
+    	count = params->times;
+		do {
+			LedDriver_On(params->index);
+			osDelay(params->on_time);
+			LedDriver_Off(params->index);
+			osDelay(params->off_time);
+		} while (count == 0 || --count > 0);
+
+		osDelay(2000);
+    }
 }
 
 void LedDriver_Blink(uint8_t ledIndex, uint16_t times) {
