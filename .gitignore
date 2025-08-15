@@ -1,4 +1,4 @@
 .metadata/
 .settings/
-Debug/
+Debug/ecu_sw.*
 Release/

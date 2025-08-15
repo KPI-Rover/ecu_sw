@@ -1,0 +1,2 @@
+../KPI_Rover/LEDs/manager.c:20:6:LedManager_Init	48	static
+../KPI_Rover/LEDs/manager.c:37:6:LedManager_Task	16	static

@@ -1,0 +1,3 @@
+../KPI_Rover/Logger/ul_ulog.c:125:13:ulogTask	264	static
+../KPI_Rover/Logger/ul_ulog.c:73:6:ul_ulog_send	312	static,ignoring_inline_asm
+../KPI_Rover/Logger/ul_ulog.c:56:6:ul_ulog_init	16	static
