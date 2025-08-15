@@ -1,4 +1,10 @@
 .metadata/
 .settings/
-Debug/
-Release/
+Debug/**
+!Debug/makefile
+!Debug/**/
+!Debug/**/*.mk
+Release/**
+!Release/makefile
+!Release/**/
+!Release/**/*.mk
