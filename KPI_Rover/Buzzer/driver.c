@@ -40,16 +40,11 @@ static struct BuzzerStateMemory bsm;
 
 static unsigned int count_bits_16bit(uint16_t value)
 {
-	unsigned int mask = 0x8000,
-		     result = 0;
+	unsigned int result = 0;
 
-	while (mask)
-	{
-		if (value & mask)
+	for ( ; value; value >>= 1)
+		if (value & 1)
 			result++;
-
-		mask >>= 1;
-	}
 
 	return result;
 }
