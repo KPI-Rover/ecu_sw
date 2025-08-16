@@ -9,6 +9,8 @@
 #define BUZZER_VALUE_ERROR 0x4U
 #define BUZZER_ZERO_ONTIME_ERROR 0x5U
 #define BUZZER_ZERO_OFFTIME_ERROR 0x6U
+#define BUZZER_ZERO_ACTIVE_TIME_ERROR 0x7U
+#define BUZZER_TIMER_BUSY 0x8U
 
 unsigned int Buzzer_ConfigurePort(const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin);
 unsigned int Buzzer_Enable(void);
