@@ -7,6 +7,7 @@
 #define TIMER_CREATED ( (uint8_t) 0x1 )
 #define TIMER_ACTIVE ( (uint8_t) 0x2 )
 
+
 /* Settings */
 #define TIMER_QUEUE_SIZE 16
 
@@ -57,6 +58,8 @@ static int unregister_timer(TimerHandle_t t)
 	return -1;
 }
 
+void timers_init(void) {}
+
 uint32_t timers_check_health(void)
 {
 	uint32_t issues = 0;
@@ -80,6 +83,24 @@ uint32_t timers_check_health(void)
 	}
 
 	return issues;
+}
+
+void timers_run(void)
+{
+	TimerHandle_t chosen_timer = NULL;
+
+	for (int i = 0; i < TIMER_QUEUE_SIZE; i++) {
+		if (timer_queue[i] == NULL)
+			continue;
+
+		timer_queue[i]->timer_ticks_left--;
+
+		if (timer_queue[i]->timer_ticks_left <= 0 && chosen_timer == NULL)
+			chosen_timer = timer_queue[i];
+	}
+
+	if (chosen_timer)
+		chosen_timer->pxCallbackFunction(chosen_timer);
 }
 
 TimerHandle_t xTimerCreateStatic(
