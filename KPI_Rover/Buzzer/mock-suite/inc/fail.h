@@ -16,7 +16,7 @@
 	do { \
 		if ((exp1) == (exp2)) { \
 			printf("[%s %s:%d] %s: check %s (0x%08x) != %s (0x%08x) fails\n", \
-					(prefix), __FILE__, __LINE__, __func__, #exp1, (exp1), #exp2, (exp2)); \
+					(prefix), __FILE__, __LINE__, __func__, #exp1, (unsigned int) (exp1), #exp2, (unsigned int) (exp2)); \
 			(counter)++; \
 			return (return_on_fail); \
 		} \
@@ -26,7 +26,7 @@
 	do { \
 		if ((exp1) <= (exp2)) { \
 			printf("[%s %s:%d] %s: check %s (0x%08x) > %s (0x%08x) fails\n", \
-					(prefix), __FILE__, __LINE__, __func__, #exp1, (exp1), #exp2, (exp2)); \
+					(prefix), __FILE__, __LINE__, __func__, #exp1, (unsigned int) (exp1), #exp2, (unsigned int) (exp2)); \
 			(counter)++; \
 			return (return_on_fail); \
 		} \
@@ -36,7 +36,7 @@
 	do { \
 		if ((exp1) == (exp2)) { \
 			printf("[%s %s:%d] %s: check %s (0x%08x) != %s (0x%08x) fails, continuing\n", \
-				(prefix), __FILE__, __LINE__, __func__, #exp1, (exp1), #exp2, (exp2)); \
+					(prefix), __FILE__, __LINE__, __func__, #exp1, (unsigned int) (exp1), #exp2, (unsigned int) (exp2)); \
 			(counter)++; \
 		} \
 	} while (0)
