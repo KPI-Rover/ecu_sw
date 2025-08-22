@@ -2,9 +2,11 @@
 .settings/
 Debug/**
 !Debug/makefile
+!Debug/objects.list
 !Debug/**/
 !Debug/**/*.mk
 Release/**
 !Release/makefile
+!Release/objects.list
 !Release/**/
 !Release/**/*.mk
