@@ -1,13 +1,16 @@
-#include <stdlib.h>
+#include <string.h>
 
 #include "stm32f4xx_hal_gpio.h"
 
+static GPIO_TypeDef GPIOs[11]; // GPIOA - GPIOK
 GPIO_TypeDef *GPIOD;
 
 void gpio_init(void)
 {
-	GPIOD = malloc(sizeof(GPIO_TypeDef));
-	GPIOD->ODR = 0;
+	// Notice: GPIO A & B registers have specific non-zero values at startup
+	memset(GPIOs, 0, sizeof(GPIOs));
+
+	GPIOD = &(GPIOs[3]);
 }
 
 uint32_t gpio_check_health(void)

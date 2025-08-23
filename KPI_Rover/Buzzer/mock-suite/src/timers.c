@@ -1,22 +1,15 @@
-#include "stdio.h"
+#include <stdio.h>
+#include <string.h>
 
 #include "timers.h"
 
 #include "fail.h"
-
-#define TIMER_CREATED ( (uint8_t) 0x1 )
-#define TIMER_ACTIVE ( (uint8_t) 0x2 )
-
-
-/* Settings */
-#define TIMER_QUEUE_SIZE 16
 
 
 static uint32_t null_timer_ptr_count = 0;
 static uint32_t static_timer_recreation_count = 0;
 static uint32_t non_positive_timer_period_count = 0;
 static uint32_t null_callback_function_specified_count = 0;
-static uint32_t stopped_non_active_timer_count = 0;
 static uint32_t operated_on_active_timer_count = 0;
 static uint32_t timer_queue_overflow_count = 0;
 
@@ -52,13 +45,16 @@ static int unregister_timer(TimerHandle_t t)
 			continue;
 
 		timer_queue[i] = NULL;
-		return 0;
+		return i;
 	}
 
 	return -1;
 }
 
-void timers_init(void) {}
+void timers_init(void)
+{
+	memset(timer_queue, 0, sizeof(timer_queue));
+}
 
 uint32_t timers_check_health(void)
 {
@@ -68,19 +64,8 @@ uint32_t timers_check_health(void)
 	REPORT_COUNTER(static_timer_recreation_count);
 	REPORT_COUNTER(non_positive_timer_period_count);
 	REPORT_COUNTER(null_callback_function_specified_count);
-	REPORT_COUNTER(stopped_non_active_timer_count);
 	REPORT_COUNTER(operated_on_active_timer_count);
 	REPORT_COUNTER(timer_queue_overflow_count);
-
-	if (static_timer_recreation_count) {
-		printf("[ERROR] Static timer recreated %d time(s)\n", static_timer_recreation_count);
-		issues += static_timer_recreation_count;
-	}
-
-	if (non_positive_timer_period_count) {
-		printf("[ERROR] Non-positive timer period given %d time(s)\n", non_positive_timer_period_count);
-		issues += non_positive_timer_period_count;
-	}
 
 	return issues;
 }
@@ -93,14 +78,27 @@ void timers_run(void)
 		if (timer_queue[i] == NULL)
 			continue;
 
-		timer_queue[i]->timer_ticks_left--;
+		if (timer_queue[i]->status & TIMER_ACTIVE)
+			timer_queue[i]->timer_ticks_left--;
 
-		if (timer_queue[i]->timer_ticks_left <= 0 && chosen_timer == NULL)
+		if (timer_queue[i]->timer_ticks_left > 0)
+			continue;
+
+		timer_queue[i]->status &= ~TIMER_ACTIVE;
+
+		if (chosen_timer == NULL) {
 			chosen_timer = timer_queue[i];
+			timer_queue[i] = NULL;
+		}
 	}
 
 	if (chosen_timer)
 		chosen_timer->pxCallbackFunction(chosen_timer);
+}
+
+TimerHandle_t *get_timer_queue(void)
+{
+	return timer_queue;
 }
 
 TimerHandle_t xTimerCreateStatic(
@@ -132,7 +130,6 @@ BaseType_t xTimerStop(
 		TickType_t xTicksToWait)
 {
 	FAIL_ON_EQ(xTimer, NULL, pdFAIL, "WARN", null_timer_ptr_count);
-	FAIL_ON_EQ(xTimer->status & TIMER_ACTIVE, 0, pdPASS, "NOTE", stopped_non_active_timer_count);
 	xTimer->status &= ~TIMER_ACTIVE;
 
 	(void) unregister_timer(xTimer);
