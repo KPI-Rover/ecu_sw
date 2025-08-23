@@ -12,12 +12,11 @@ typedef struct {
     float phys_high;
 } adc_calibration_t;
 
-
 typedef void (*adc_callback_t)(uint8_t channel, uint16_t value);
 
 void ADC_Driver_Init(const uint8_t* channels, size_t count);
 void ADC_Driver_Start(void);
-void ADC_Driver_Calibrate(void);
+void ADC_PerformTwoPointCalibration(uint8_t channel);
 void ADC_Driver_SetCalibration(uint8_t channel, adc_calibration_t calib);
 float ADC_Driver_GetCalibratedValue(uint8_t channel);
 void ADC_Driver_NotifyTaskOnConversion(TaskHandle_t taskHandle);
