@@ -75,6 +75,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 void StartDefaultTask(void *argument);
+void ADC_Manager_Task(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -157,6 +158,13 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   ul_ulog_init();
+
+  const osThreadAttr_t adcTask_attributes = {
+      .name = "adcTask",
+      .priority = (osPriority_t) osPriorityNormal,
+      .stack_size = 512 * 4
+  };
+  (void) osThreadNew(ADC_Manager_Task, NULL, &adcTask_attributes);
 
   
   /* USER CODE END RTOS_THREADS */
