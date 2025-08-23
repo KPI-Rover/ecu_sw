@@ -1,4 +1,4 @@
-set(CFLAGS -O2 -Wall -Wpedantic)
+set(CFLAGS -Og -g3 -Wall -Wpedantic -Wno-pointer-to-int-cast)
 
 cmake_minimum_required(VERSION 3.25.1)
 
@@ -11,11 +11,11 @@ add_library(driver STATIC ../driver.c)
 
 add_executable(buzzer-driver test/buzzer-driver.c)
 
-target_include_directories(scheduler PRIVATE inc)
-target_include_directories(timers PRIVATE inc)
+target_include_directories(scheduler PRIVATE . inc)
+target_include_directories(timers PRIVATE . inc)
 target_include_directories(stm32f4xx_hal_gpio PRIVATE inc)
-target_include_directories(driver PRIVATE .. inc)
-target_include_directories(buzzer-driver PRIVATE .. inc)
+target_include_directories(driver PRIVATE .. . inc)
+target_include_directories(buzzer-driver PRIVATE .. . inc)
 
 target_link_libraries(scheduler timers)
 target_link_libraries(driver timers stm32f4xx_hal_gpio)
