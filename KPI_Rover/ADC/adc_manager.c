@@ -1,6 +1,7 @@
 #include "adc_manager.h"
 #include "ulog.h"
 #include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
 
 static const adc_channel_config_t adc_config[] = {
     { .channel = 2, .phys_high = 3.3f, .calibration_required = 1 }
@@ -58,7 +59,5 @@ void ADC_Manager_Task(void *argument) {
     	   default:
     		   break;
     	}
-
-    	osDelay(200);
     }
 }

@@ -85,7 +85,6 @@ static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void *argument);
-void ADC_Manager_Task(void *argument);
 
 /* USER CODE BEGIN PFP */
 
