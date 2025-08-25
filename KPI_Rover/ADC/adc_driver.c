@@ -40,46 +40,68 @@ void ADC_Driver_Start(void) {
 	}
 }
 
-void ADC_PerformTwoPointCalibration(uint8_t channel) {
-    adc_calibration_t calib = {0};
+uint16_t ADC_PerformTwoPointCalibration(uint8_t channel) {
+	uint16_t samples[36];
+	uint32_t start = HAL_GetTick();
+	size_t count = 0;
 
-    osDelay(500);
+	while ((HAL_GetTick() - start < 100) && (count < 36)) {
+		samples[count++] = ADC_Driver_GetLastValue(channel);
+		osDelay(3);
+	}
 
-    ULOG_INFO("Calibration: 0 В on channel %u", channel);
-    uint32_t sum = 0;
-    uint32_t count = 0;
-    uint32_t start = HAL_GetTick();
-    while (HAL_GetTick() - start < 5000) {
-        sum += ADC_Driver_GetLastValue(channel);
-        count++;
-        osDelay(100);
-    }
-    calib.raw_low = (count > 0) ? (uint16_t)(sum / count) : 0;
+	uint16_t min1=0xFFFF, min2=0xFFFF, max1=0, max2=0;
+	for (size_t i=0; i<count; i++) {
+		uint16_t v = samples[i];
+		if (v < min1) {
+			min2=min1;
+			min1=v;
+		}
+		else if (v < min2) {
+			min2=v;
+		}
+
+		if (v > max1) {
+			max2=max1;
+			max1=v;
+		}
+		else if (v > max2) {
+			max2=v;
+		}
+	}
+
+	uint16_t avg_min = (min1+min2)/2;
+	uint16_t avg_max = (max1+max2)/2;
+
+	uint32_t sum = 0;
+	for (size_t i=0; i<count; i++) sum += samples[i];
+	uint16_t avg_all = sum / count;
+
+	return (avg_min + avg_max + avg_all)/3;
+
+}
+
+void ADC_Driver_StartCalibrationLow(uint8_t channel) {
+    uint16_t raw = ADC_PerformTwoPointCalibration(channel);
+    adc_calibration_t calib = adc_calibration_data[channel];
+    calib.raw_low = raw;
     calib.phys_low = 0.0f;
-    ULOG_INFO("raw_low = %u", calib.raw_low);
-
-    osDelay(100);
-
-    ULOG_INFO("Wait 10s, 3.3 В on channel %u", channel);
-    osDelay(10000);
-
-    sum = 0;
-    count = 0;
-    start = HAL_GetTick();
-    while (HAL_GetTick() - start < 5000) {
-        sum += ADC_Driver_GetLastValue(channel);
-        count++;
-        osDelay(100);
-    }
-    calib.raw_high = (count > 0) ? (uint16_t)(sum / count) : 0;
-    calib.phys_high = 3.3f;
-    ULOG_INFO("raw_high = %u", calib.raw_high);
 
     ADC_Driver_SetCalibration(channel, calib);
-
-    ULOG_INFO("Calibration complete: raw_low=%u, raw_high=%u",
-              calib.raw_low, calib.raw_high);
+    ULOG_INFO("Calibration LOW complete: raw=%u", raw);
 }
+
+void ADC_Driver_StartCalibrationHigh(uint8_t channel) {
+    uint16_t raw = ADC_PerformTwoPointCalibration(channel);
+    adc_calibration_t calib = adc_calibration_data[channel];
+    calib.raw_high = raw;
+    calib.phys_high = 3.3f;
+
+    ADC_Driver_SetCalibration(channel, calib);
+    ULOG_INFO("Calibration HIGH complete: raw=%u", raw);
+}
+
+
 
 void ADC_Driver_SetCalibration(uint8_t channel, adc_calibration_t calib) {
     for (size_t i = 0; i < channel_count; ++i) {

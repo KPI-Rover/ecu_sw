@@ -33,13 +33,6 @@ void ADC_Manager_Init(void) {
 
     ADC_Driver_Start();
 
-    osDelay(500);
-
-    for (size_t i = 0; i < ADC_CONFIG_COUNT; i++) {
-    	if (adc_config[i].calibration_required) {
-            ADC_PerformTwoPointCalibration(adc_config[i].channel);
-        }
-    }
     ADC_Driver_RegisterCallback(adc_manager_callback);
 
 
@@ -49,7 +42,23 @@ void ADC_Manager_Task(void *argument) {
     ADC_Manager_Init();
 
     for (;;) {
-            // DB_SaveADCValue(ch, calibrated);
+//    	int state = DB_ReadCalibState();
 
+    	switch (0) { // (state)
+//    		case 1: // start 0В
+//    			ADC_Driver_StartCalibrationLow(adc_config[0].channel);
+//    	        DB_WriteCalibState(2);
+//    	        break;
+//
+//    	    case 3: // start 3.3В
+//    	    	ADC_Driver_StartCalibrationHigh(adc_config[0].channel);
+//    	        DB_WriteCalibState(4);
+//    	        break;
+
+    	   default:
+    		   break;
+    	}
+
+    	osDelay(200);
     }
 }
