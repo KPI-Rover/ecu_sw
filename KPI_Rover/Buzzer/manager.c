@@ -1,5 +1,5 @@
 #include "FreeRTOS.h"
-#include "task.h"
+#include "timers.h"
 
 #include "cmsis_os2.h"
 
@@ -24,7 +24,7 @@ void buzzer_manager_task(void *d)
 	if (Buzzer_ConfigurePort(&(bo[0]), GPIOD, GPIO_PIN_15))
 	{
 		ULOG_ERROR("Failed to configure buzzer driver port");
-		vTaskDelete(NULL);
+		osThreadExit();
 	}
 
 	{
@@ -39,28 +39,28 @@ void buzzer_manager_task(void *d)
 
 		if (timer_handle != (&timer)) {
 			ULOG_ERROR("Failed to create a timer");
-			vTaskDelete(NULL);
+			osThreadExit();
 		}
 
 		if (osTimerStart(timer_handle, 10) != osOK) {
 			ULOG_ERROR("Failed to start a timer");
-			vTaskDelete(NULL);
+			osThreadExit();
 		}
 	}
 
 	for ( ; ; )
 	{
 		Buzzer_Enable(&(bo[0]));
-		vTaskDelay(pdMS_TO_TICKS(3000));
+		osDelay(3000);
 		Buzzer_Disable(&(bo[0]));
-		vTaskDelay(pdMS_TO_TICKS(3000));
+		osDelay(3000);
 		Buzzer_Pulse(&(bo[0]), 500, 1000, 5000);
-		vTaskDelay(pdMS_TO_TICKS(5000));
+		osDelay(5000);
 		Buzzer_Pulse(&(bo[0]), 200, 1000, 5000);
-		vTaskDelay(pdMS_TO_TICKS(5000));
+		osDelay(5000);
 		Buzzer_Pulse(&(bo[0]), 100, 300, 5000);
-		vTaskDelay(pdMS_TO_TICKS(5000));
+		osDelay(5000);
 		Buzzer_Pulse(&(bo[0]), 250, 300, 5000);
-		vTaskDelay(pdMS_TO_TICKS(1000)); // intentionally shorter delay; next command must abort this one
+		osDelay(1000); // intentionally shorter delay; any next command must abort any previous one
 	}
 }
