@@ -1,8 +1,6 @@
-#include "stm32f4xx_hal.h"
+#include <stddef.h>
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "timers.h"
+#include "stm32f4xx_hal.h"
 
 #include "driver.h"
 
@@ -15,29 +13,6 @@
 		} \
 	} while (0)
 
-enum BuzzerState {
-	BUZZER_ON,
-	BUZZER_OFF,
-	BUZZER_NOT_ACTIVE,
-	IMPOSSIBLE_STATE
-};
-
-struct BuzzerStateMemory {
-	TickType_t on_duration;
-	TickType_t off_duration;
-	TickType_t total_active_time;
-	TickType_t active_time_limit;
-	enum BuzzerState current_state;
-};
-
-static GPIO_TypeDef *GPIO_buzzer_port;
-static uint16_t GPIO_buzzer_pin;
-static int buzzer_initialized;
-
-static TimerHandle_t timer_handle;
-static StaticTimer_t timer;
-static struct BuzzerStateMemory bsm;
-
 static unsigned int count_bits_16bit(uint16_t value)
 {
 	unsigned int result = 0;
@@ -49,157 +24,129 @@ static unsigned int count_bits_16bit(uint16_t value)
 	return result;
 }
 
-static void Buzzer_ResetTimer(void)
+unsigned int Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin)
 {
-	if (timer_handle == NULL)
-		return;
-
-	(void) xTimerStop(timer_handle, BUZZER_BLOCKING_TIME_LIMIT);
-}
-
-unsigned int Buzzer_ConfigurePort(const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin)
-{
-	Buzzer_ResetTimer();
+	self->bsm.current_state = BUZZER_NOT_TIMED;
 
 	unsigned int errors = 0;
 
 	CHECK_ERROR(count_bits_16bit(gpio_pin) != 1, BUZZER_PIN_ERROR);
 
-	GPIO_buzzer_port = (GPIO_TypeDef *) gpio_port;
-	GPIO_buzzer_pin = (uint16_t) gpio_pin;
+	self->GPIO_buzzer_port = (GPIO_TypeDef *) gpio_port;
+	self->GPIO_buzzer_pin = (uint16_t) gpio_pin;
 
-	buzzer_initialized = 1;
+	self->buzzer_initialized = 1;
 
 	return errors;
 
 fail:
-	buzzer_initialized = 0;
+	self->buzzer_initialized = 0;
 	return errors;
 }
 
-static unsigned int Buzzer_SetON(void)
+static unsigned int Buzzer_SetON(struct BuzzerObject * const self)
 {
 	unsigned int errors = 0;
 
-	CHECK_ERROR(!buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
+	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
-	HAL_GPIO_WritePin(GPIO_buzzer_port, GPIO_buzzer_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(self->GPIO_buzzer_port, self->GPIO_buzzer_pin, GPIO_PIN_SET);
 
 fail:
 	return errors;
 }
 
-static unsigned int Buzzer_SetOFF(void)
+static unsigned int Buzzer_SetOFF(struct BuzzerObject * const self)
 {
 	unsigned int errors = 0;
 
-	CHECK_ERROR(!buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
+	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
-	HAL_GPIO_WritePin(GPIO_buzzer_port, GPIO_buzzer_pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(self->GPIO_buzzer_port, self->GPIO_buzzer_pin, GPIO_PIN_RESET);
 
 fail:
 	return errors;
 }
 
-unsigned int Buzzer_Enable(void)
+unsigned int Buzzer_Enable(struct BuzzerObject * const self)
 {
-	Buzzer_ResetTimer();
-	return Buzzer_SetON();
+	self->bsm.current_state = BUZZER_NOT_TIMED;
+	return Buzzer_SetON(self);
 }
 
-unsigned int Buzzer_Disable(void)
+unsigned int Buzzer_Disable(struct BuzzerObject * const self)
 {
-	Buzzer_ResetTimer();
-	return Buzzer_SetOFF();
+	self->bsm.current_state = BUZZER_NOT_TIMED;
+	return Buzzer_SetOFF(self);
 }
 
-static void Buzzer_TimerCallback(TimerHandle_t t)
+void Buzzer_TimerTask(struct BuzzerObject * const self)
 {
-	TickType_t new_period;
+	if (self->bsm.current_state == BUZZER_NOT_TIMED)
+		return;
 
-	switch (bsm.current_state) {
+	self->bsm.total_active_time_left--;
+	self->bsm.current_state_valid_for--;
+
+	if (!self->bsm.total_active_time_left) {
+		Buzzer_SetOFF(self);
+		self->bsm.current_state = BUZZER_NOT_TIMED;
+		return;
+	}
+
+	if (self->bsm.current_state_valid_for)
+		return;
+
+	switch (self->bsm.current_state) {
 	case BUZZER_ON:
-		Buzzer_SetOFF(); // disable first, determine action course next
-		bsm.current_state = BUZZER_OFF;
-		bsm.total_active_time += bsm.on_duration;
-
-		new_period = bsm.total_active_time + bsm.off_duration <= bsm.active_time_limit
-			? bsm.off_duration
-			: bsm.active_time_limit - bsm.total_active_time;
-
-		if (!new_period)
-			break;
-
-		(void) xTimerChangePeriod(timer_handle, new_period, 0);
-		(void) xTimerStart(timer_handle, 0);
+		Buzzer_SetOFF(self); // disable first, determine action course next
+		self->bsm.current_state = BUZZER_OFF;
+		self->bsm.current_state_valid_for = self->bsm.off_duration;
 		break;
 
 	case BUZZER_OFF:
-		bsm.current_state = BUZZER_ON;
-		bsm.total_active_time += bsm.off_duration;
-
-		new_period = bsm.total_active_time + bsm.on_duration <= bsm.active_time_limit
-			? bsm.on_duration
-			: bsm.active_time_limit - bsm.total_active_time;
-
-		if (!new_period)
-			break;
-
-		(void) xTimerChangePeriod(timer_handle, new_period, 0);
-		(void) xTimerStart(timer_handle, 0);
-		Buzzer_SetON();
+		self->bsm.current_state = BUZZER_ON;
+		self->bsm.current_state_valid_for = self->bsm.on_duration;
+		Buzzer_SetON(self);
 		break;
 
-	case BUZZER_NOT_ACTIVE:
+	case BUZZER_NOT_TIMED:
 	case IMPOSSIBLE_STATE:
 	default:
-		// why are we here then?
+		// how did we get here?
 		break;
 	}
 }
 
-unsigned int Buzzer_Pulse(const unsigned int on_time_ms, const unsigned int period_time_ms, const unsigned int total_active_time_ms)
+unsigned int Buzzer_Pulse(struct BuzzerObject * const self, const unsigned int on_time_ms, const unsigned int period_time_ms, const unsigned int total_active_time_ms)
 {
-	Buzzer_ResetTimer();
+	self->bsm.current_state = BUZZER_NOT_TIMED;
 
 	unsigned int errors = 0;
 
-	CHECK_ERROR(!buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
+	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
-	const TickType_t on_time_ticks = pdMS_TO_TICKS(on_time_ms);
+	const int on_time_ticks = on_time_ms / 10;
 	CHECK_ERROR(!on_time_ticks, BUZZER_ZERO_ONTIME_ERROR);
 
-	const TickType_t off_time_ticks = pdMS_TO_TICKS(period_time_ms) - on_time_ticks;
+	const int off_time_ticks = (period_time_ms / 10) - on_time_ticks;
 	CHECK_ERROR(!off_time_ticks, BUZZER_ZERO_OFFTIME_ERROR);
 
-	const TickType_t active_time_limit = pdMS_TO_TICKS(total_active_time_ms);
+	const int active_time_limit = total_active_time_ms / 10;
 	CHECK_ERROR(!active_time_limit, BUZZER_ZERO_ACTIVE_TIME_ERROR);
 
-	if (timer_handle == NULL) {
-		timer_handle = xTimerCreateStatic(
-				"",
-				on_time_ticks,
-				pdFALSE,
-				0,
-				Buzzer_TimerCallback,
-				&timer);
-	} else {
-		CHECK_ERROR(xTimerChangePeriod(timer_handle, on_time_ticks, BUZZER_BLOCKING_TIME_LIMIT) == pdFAIL, BUZZER_TIMER_BUSY);
-	}
+	Buzzer_SetON(self);
 
-	CHECK_ERROR(xTimerStart(timer_handle, BUZZER_BLOCKING_TIME_LIMIT) == pdFAIL, BUZZER_TIMER_BUSY);
-	Buzzer_SetON();
-
-	bsm.on_duration = on_time_ticks;
-	bsm.off_duration = off_time_ticks;
-	bsm.total_active_time = 0;
-	bsm.active_time_limit = active_time_limit;
-	bsm.current_state = BUZZER_ON;
+	self->bsm.on_duration = on_time_ticks;
+	self->bsm.off_duration = off_time_ticks;
+	self->bsm.total_active_time_left = active_time_limit;
+	self->bsm.current_state_valid_for = on_time_ticks;
+	self->bsm.current_state = BUZZER_ON;
 
 	return 0;
 
 fail:
-	Buzzer_ResetTimer();
-	Buzzer_SetOFF();
+	self->bsm.current_state = BUZZER_NOT_TIMED;
+	Buzzer_SetOFF(self);
 	return errors;
 }
