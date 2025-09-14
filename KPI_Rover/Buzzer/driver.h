@@ -20,24 +20,24 @@ enum BuzzerState {
 };
 
 struct BuzzerStateMemory {
-	int on_duration;
-	int off_duration;
-	int total_active_time_left;
-	int current_state_valid_for;
+	uint32_t on_duration;
+	uint32_t off_duration;
+	uint32_t total_active_time_left;
+	uint32_t current_state_valid_for;
 	enum BuzzerState current_state;
 };
 
 struct BuzzerObject {
 	GPIO_TypeDef *GPIO_buzzer_port;
 	uint16_t GPIO_buzzer_pin;
-	int buzzer_initialized;
+	int8_t buzzer_initialized;
 	struct BuzzerStateMemory bsm;
 };
 
-unsigned int Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin);
-unsigned int Buzzer_Enable(struct BuzzerObject * const self);
-unsigned int Buzzer_Disable(struct BuzzerObject * const self);
-unsigned int Buzzer_Pulse(struct BuzzerObject * const self, const unsigned int on_time_ms, const unsigned int period_time_ms, const unsigned int total_active_time_ms);
+uint32_t Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin);
+uint32_t Buzzer_Enable(struct BuzzerObject * const self);
+uint32_t Buzzer_Disable(struct BuzzerObject * const self);
+uint32_t Buzzer_Pulse(struct BuzzerObject * const self, const uint32_t on_time_ms, const uint32_t period_time_ms, const uint32_t total_active_time_ms);
 void Buzzer_TimerTask(struct BuzzerObject * const self);
 
 #endif /* __BUZZER_DRIVER */

@@ -13,9 +13,9 @@
 		} \
 	} while (0)
 
-static unsigned int count_bits_16bit(uint16_t value)
+static uint8_t count_bits_16bit(uint16_t value)
 {
-	unsigned int result = 0;
+	uint8_t result = 0;
 
 	for ( ; value; value >>= 1)
 		if (value & 1)
@@ -24,11 +24,11 @@ static unsigned int count_bits_16bit(uint16_t value)
 	return result;
 }
 
-unsigned int Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin)
+uint32_t Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin)
 {
 	self->bsm.current_state = BUZZER_NOT_TIMED;
 
-	unsigned int errors = 0;
+	uint32_t errors = 0;
 
 	CHECK_ERROR(count_bits_16bit(gpio_pin) != 1, BUZZER_PIN_ERROR);
 
@@ -44,9 +44,9 @@ fail:
 	return errors;
 }
 
-static unsigned int Buzzer_SetON(struct BuzzerObject * const self)
+static uint32_t Buzzer_SetON(struct BuzzerObject * const self)
 {
-	unsigned int errors = 0;
+	uint32_t errors = 0;
 
 	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
@@ -56,9 +56,9 @@ fail:
 	return errors;
 }
 
-static unsigned int Buzzer_SetOFF(struct BuzzerObject * const self)
+static uint32_t Buzzer_SetOFF(struct BuzzerObject * const self)
 {
-	unsigned int errors = 0;
+	uint32_t errors = 0;
 
 	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
@@ -68,13 +68,13 @@ fail:
 	return errors;
 }
 
-unsigned int Buzzer_Enable(struct BuzzerObject * const self)
+uint32_t Buzzer_Enable(struct BuzzerObject * const self)
 {
 	self->bsm.current_state = BUZZER_NOT_TIMED;
 	return Buzzer_SetON(self);
 }
 
-unsigned int Buzzer_Disable(struct BuzzerObject * const self)
+uint32_t Buzzer_Disable(struct BuzzerObject * const self)
 {
 	self->bsm.current_state = BUZZER_NOT_TIMED;
 	return Buzzer_SetOFF(self);
@@ -118,21 +118,21 @@ void Buzzer_TimerTask(struct BuzzerObject * const self)
 	}
 }
 
-unsigned int Buzzer_Pulse(struct BuzzerObject * const self, const unsigned int on_time_ms, const unsigned int period_time_ms, const unsigned int total_active_time_ms)
+uint32_t Buzzer_Pulse(struct BuzzerObject * const self, const uint32_t on_time_ms, const uint32_t period_time_ms, const uint32_t total_active_time_ms)
 {
 	self->bsm.current_state = BUZZER_NOT_TIMED;
 
-	unsigned int errors = 0;
+	uint32_t errors = 0;
 
 	CHECK_ERROR(!self->buzzer_initialized, BUZZER_NOT_INITIALIZED_ERROR);
 
-	const int on_time_ticks = on_time_ms / 10;
+	const uint32_t on_time_ticks = on_time_ms / 10;
 	CHECK_ERROR(!on_time_ticks, BUZZER_ZERO_ONTIME_ERROR);
 
-	const int off_time_ticks = (period_time_ms / 10) - on_time_ticks;
+	const uint32_t off_time_ticks = (period_time_ms / 10) - on_time_ticks;
 	CHECK_ERROR(!off_time_ticks, BUZZER_ZERO_OFFTIME_ERROR);
 
-	const int active_time_limit = total_active_time_ms / 10;
+	const uint32_t active_time_limit = total_active_time_ms / 10;
 	CHECK_ERROR(!active_time_limit, BUZZER_ZERO_ACTIVE_TIME_ERROR);
 
 	Buzzer_SetON(self);
