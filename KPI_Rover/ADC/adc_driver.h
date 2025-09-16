@@ -14,9 +14,16 @@ typedef struct {
 
 typedef void (*adc_callback_t)(uint8_t channel, uint16_t value);
 
+typedef struct {
+    uint32_t next_voltage_tick;
+    uint16_t voltage_raw;
+} adc_measurements_t;
+
+static adc_measurements_t adc_meas = {0};
+
+
 void ADC_Driver_Init(const uint8_t* channels, size_t count);
 void ADC_Driver_Start(void);
-uint16_t ADC_PerformTwoPointCalibration(uint8_t channel);
 void ADC_Driver_StartCalibrationLow(uint8_t channel);
 void ADC_Driver_StartCalibrationHigh(uint8_t channel);
 void ADC_Driver_SetCalibration(uint8_t channel, adc_calibration_t calib);
@@ -24,5 +31,6 @@ float ADC_Driver_GetCalibratedValue(uint8_t channel);
 void ADC_Driver_NotifyTaskOnConversion(TaskHandle_t taskHandle);
 uint16_t ADC_Driver_GetLastValue(uint8_t channel);
 void ADC_Driver_RegisterCallback(adc_callback_t cb);
+void ADC_Driver_TimerTask(void);
 
 #endif
