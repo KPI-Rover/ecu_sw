@@ -3,7 +3,7 @@
 #include "ulog.h"
 
 #define MAX_ADC_CHANNELS 16
-#define EMA_ALPHA 0.05f
+#define EMA_ALPHA 0.1f
 #define CALIB_SAMPLES_TARGET 36
 
 typedef enum {
@@ -21,7 +21,6 @@ static uint16_t adc_raw_values[MAX_ADC_CHANNELS];
 static uint16_t adc_filtered_values[MAX_ADC_CHANNELS];
 static size_t channel_count = 0;
 
-static TaskHandle_t notify_task = NULL;
 static adc_callback_t registered_callback = NULL;
 
 static adc_calibration_t adc_calibration_data[MAX_ADC_CHANNELS];
@@ -114,11 +113,6 @@ float ADC_Driver_GetCalibratedValue(uint8_t channel) {
     return phys;
 }
 
-
-void ADC_Driver_NotifyTaskOnConversion(TaskHandle_t taskHandle) {
-    notify_task = taskHandle;
-}
-
 void ADC_Driver_RegisterCallback(adc_callback_t cb) {
     registered_callback = cb;
     ULOG_DEBUG("ADC callback registered");
@@ -136,7 +130,6 @@ uint16_t ADC_Driver_GetLastValue(uint8_t channel) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
     if (hadc->Instance == hadc1.Instance) {
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
         for (size_t i = 0; i < channel_count; i++) {
             uint16_t raw = adc_raw_values[i];
@@ -151,10 +144,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
             }
         }
 
-        if (notify_task) {
-            vTaskNotifyGiveFromISR(notify_task, &xHigherPriorityTaskWoken);
-        }
-
         if (registered_callback) {
             for (size_t i = 0; i < channel_count; ++i) {
                 registered_callback(adc_channels[i], adc_filtered_values[i]);
@@ -163,15 +152,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 
         HAL_ADC_Stop_DMA(&hadc1);
         HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_raw_values, channel_count);
-
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
 
 
 void ADC_Driver_TimerTask(void) {
     uint32_t now = HAL_GetTick();
-
+    adc_measurements_t adc_meas = {0};
     switch (adc_driver_state) {
         case ADC_STATE_IDLE:{
         	 if (now >= adc_meas.next_voltage_tick) {
@@ -315,18 +302,6 @@ void ADC_Driver_TimerTask(void) {
         default:
             adc_driver_state = ADC_STATE_IDLE;
             break;
-    }
-
-    static uint32_t last_log = 0;
-    if ((now - last_log) >= 500) {
-        for (size_t i = 0; i < channel_count; ++i) {
-            uint8_t ch = adc_channels[i];
-            int filtered = adc_filtered_values[i];
-            float calibrated = ADC_Driver_GetCalibratedValue(ch);
-            int calibrated_mv = (int)(calibrated * 1000.0f);
-            ULOG_INFO("ADC TimerTask: CH%u filtered=%u cal=%d mV", ch, filtered, calibrated_mv);
-        }
-        last_log = now;
     }
 }
 
