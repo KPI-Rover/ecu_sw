@@ -17,6 +17,19 @@ static uint32_t last_log_tick = 0;
 static osTimerId_t adc_periodic_timer = NULL;
 static osThreadId_t adcTaskHandle = NULL;
 
+static uint16_t adc_last_raw[ADC_CONFIG_COUNT];
+static float    adc_last_cal[ADC_CONFIG_COUNT];
+
+static void adc_data_cb(uint8_t channel, uint16_t value) {
+    for (size_t i = 0; i < ADC_CONFIG_COUNT; i++) {
+        if (adc_config[i].channel == channel) {
+            adc_last_raw[i] = value;
+            adc_last_cal[i] = ADC_Driver_GetCalibratedValue(channel);
+            break;
+        }
+    }
+}
+
 static void adc_periodic_timer_cb(void *arg) {
 	ULOG_INFO("adc_periodic_timer_cb");
     (void)arg;
@@ -34,7 +47,7 @@ void ADC_Manager_Init(void) {
 
     ADC_Driver_Start();
 
-    ADC_Driver_RegisterCallback(NULL);
+    ADC_Driver_RegisterCallback(adc_data_cb);
 
     adcTaskHandle = osThreadGetId();
 
@@ -63,11 +76,9 @@ void ADC_Manager_Task(void *argument) {
 		if (now - last_log_tick >= 500) {
 			last_log_tick = now;
 			for (size_t i = 0; i < ADC_CONFIG_COUNT; ++i) {
-				uint8_t ch = adc_config[i].channel;
-				int filtered = ADC_Driver_GetLastValue(ch);
-				float cal = ADC_Driver_GetCalibratedValue(ch);
-				int cal_mv = (int)(cal * 1000.0f);
-				ULOG_INFO("ADC CH%u: filtered=%u cal=%d mV", ch, filtered, cal_mv);
+				int cal_mv = (int)(adc_last_cal[i] * 1000.0f);
+				ULOG_INFO("ADC CH%u: filtered=%u cal=%d mV",
+				adc_config[i].channel, adc_last_raw[i], cal_mv);
 			}
 		}
 

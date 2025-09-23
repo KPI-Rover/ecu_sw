@@ -3,7 +3,7 @@
 #include "ulog.h"
 
 #define MAX_ADC_CHANNELS 16
-#define EMA_ALPHA 0.1f
+#define EMA_ALPHA 0.05f
 #define CALIB_SAMPLES_TARGET 36
 
 typedef enum {
