@@ -12,26 +12,15 @@ static uint32_t last_log_tick = 0;
 #define ADC_CONFIG_COUNT (sizeof(adc_config) / sizeof(adc_config[0]))
 #define ADC_TASK_FLAG_TIMER   (1U << 0)
 
-#define ADC_TIMER_PERIOD_MS 10
+#define ADC_TIMER_PERIOD_MS 100
 
 static osTimerId_t adc_periodic_timer = NULL;
 static osThreadId_t adcTaskHandle = NULL;
 
 static void adc_periodic_timer_cb(void *arg) {
+	ULOG_INFO("adc_periodic_timer_cb");
     (void)arg;
     osThreadFlagsSet(adcTaskHandle, ADC_TASK_FLAG_TIMER);
-}
-
-static void adc_manager_callback(uint8_t channel, uint16_t value) {
-    uint32_t now = HAL_GetTick();
-
-    if (now - last_log_tick >= 500) {
-      int filtered = ADC_Driver_GetLastValue(channel);
-        float calibrated = ADC_Driver_GetCalibratedValue(channel);
-        int calibrated_mv = (int)(calibrated * 1000);
-        //ULOG_INFO("CH%u: RAW=%u, CALIB=%d mV", channel, filtered, calibrated_mv);
-        last_log_tick = now;
-    }
 }
 
 void ADC_Manager_Init(void) {
@@ -45,30 +34,42 @@ void ADC_Manager_Init(void) {
 
     ADC_Driver_Start();
 
-    ADC_Driver_RegisterCallback(adc_manager_callback);
+    ADC_Driver_RegisterCallback(NULL);
 
     adcTaskHandle = osThreadGetId();
 
     const osTimerAttr_t timer_attr = {
-      .name = "ADC_Periodic"
+      .name = "ADC_Periodic",
     };
     adc_periodic_timer = osTimerNew(adc_periodic_timer_cb, osTimerPeriodic, NULL, &timer_attr);
-    if (osTimerStart(adc_periodic_timer, ADC_TIMER_PERIOD_MS) != osOK) {
-        ULOG_ERROR("Failed to start ADC periodic timer");
-    } else {
-        ULOG_INFO("ADC periodic timer started %d ms", ADC_TIMER_PERIOD_MS);
-    }
-
-
 }
 
+
 void ADC_Manager_Task(void *argument) {
-    ADC_Manager_Init();
+
+	osTimerStart(adc_periodic_timer, ADC_TIMER_PERIOD_MS);
+
+	ADC_Manager_Init();
 
     for (;;) {
 
-    	//osThreadFlagsWait(ADC_TASK_FLAG_TIMER, osFlagsWaitAny, 100);
-    	ADC_Driver_TimerTask();
+    	 uint32_t flags = osThreadFlagsWait(ADC_TASK_FLAG_TIMER, osFlagsWaitAny, 10);
+
+    	if (flags & ADC_TASK_FLAG_TIMER) {
+    	    ADC_Driver_TimerTask();
+    	}
+
+    	uint32_t now = HAL_GetTick();
+		if (now - last_log_tick >= 500) {
+			last_log_tick = now;
+			for (size_t i = 0; i < ADC_CONFIG_COUNT; ++i) {
+				uint8_t ch = adc_config[i].channel;
+				int filtered = ADC_Driver_GetLastValue(ch);
+				float cal = ADC_Driver_GetCalibratedValue(ch);
+				int cal_mv = (int)(cal * 1000.0f);
+				ULOG_INFO("ADC CH%u: filtered=%u cal=%d mV", ch, filtered, cal_mv);
+			}
+		}
 
 //      int state = DB_ReadCalibState();
 
@@ -86,5 +87,6 @@ void ADC_Manager_Task(void *argument) {
          default:
            break;
       }
+      osDelay(100);
     }
 }

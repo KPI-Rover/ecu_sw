@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "adc_driver.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+
 
 typedef struct {
     uint8_t channel;
