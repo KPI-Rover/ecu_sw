@@ -160,7 +160,7 @@ int main(void)
 
   static const osThreadAttr_t buzzer_task_attrs = {
     .name = "buzzer",
-    .stack_size = 16 * 4,
+    .stack_size = 64 * 4,
     .priority = (osPriority_t) osPriorityHigh,
   };
   (void) osThreadNew(buzzer_manager_task, NULL, &buzzer_task_attrs);
