@@ -12,26 +12,69 @@
 #define BUZZER_ZERO_ACTIVE_TIME_ERROR 0x7U
 #define BUZZER_TIMER_BUSY 0x8U
 
-enum BuzzerState {
-	BUZZER_NOT_TIMED,
-	BUZZER_ON,
-	BUZZER_OFF,
-	IMPOSSIBLE_STATE
+
+enum BuzzerEventType {
+	NO_EVENT,
+	IMPOSSIBLE_EVENT,
+	TO_ON,
+	TO_OFF,
+	TO_PULSE
 };
 
-struct BuzzerStateMemory {
-	uint32_t on_duration;
-	uint32_t off_duration;
-	uint32_t total_active_time_left;
-	uint32_t current_state_valid_for;
-	enum BuzzerState current_state;
+struct BuzzerEvent {
+	enum BuzzerEventType ev;
+	uint32_t pulse_on_for;
+	uint32_t pulse_off_for;
+	uint32_t pulse_total_for;
+};
+
+
+enum BuzzerGlobalStateType {
+	IMPOSSIBLE_STATE,
+	BUZZER_OFF,
+	BUZZER_ON,
+	BUZZER_PULSE
+};
+
+struct BuzzerGlobalState {
+	enum BuzzerGlobalStateType current_state;
+	uint32_t current_state_since;
+};
+
+
+enum BuzzerPulseSubStateType {
+	BUZZER_TO_ON,
+	BUZZER_DELAY_BEFORE_OFF,
+	BUZZER_TO_OFF,
+	BUZZER_DELAY_BEFORE_ON,
+	BUZZER_FINAL_DELAY
+};
+
+struct BuzzerPulseConfig {
+	uint32_t pulse_on_for;
+	uint32_t pulse_off_for;
+	uint32_t pulse_total_for;
+};
+
+struct BuzzerPulseSubState {
+	enum BuzzerPulseSubStateType current_state;
+	struct BuzzerPulseConfig config;
+	uint32_t current_state_since;
+	uint32_t state_lifetime_override;
+};
+
+
+struct BuzzerConfig {
+	GPIO_TypeDef *GPIO_port;
+	uint16_t GPIO_pin;
+	int8_t initialized;
 };
 
 struct BuzzerObject {
-	GPIO_TypeDef *GPIO_buzzer_port;
-	uint16_t GPIO_buzzer_pin;
-	int8_t buzzer_initialized;
-	struct BuzzerStateMemory bsm;
+	struct BuzzerConfig c;
+	struct BuzzerGlobalState s;
+	struct BuzzerPulseSubState ps;
+	struct BuzzerEvent e;
 };
 
 uint32_t Buzzer_ConfigurePort(struct BuzzerObject * const self, const GPIO_TypeDef * const gpio_port, const uint16_t gpio_pin);
