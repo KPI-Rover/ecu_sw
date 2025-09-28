@@ -10,6 +10,14 @@ typedef enum {
 	LED_FLASH
 } LedMode_e;
 
+typedef enum {
+    LED_STATE_IDLE,
+    LED_STATE_ON,
+    LED_STATE_OFF,
+    LED_STATE_BLINK,
+    LED_STATE_FLASH
+} LedState_e;
+
 typedef struct {
 	GPIO_TypeDef* port;
 	uint16_t pin;
@@ -18,16 +26,23 @@ typedef struct {
 } LedSettings_t;
 
 typedef struct {
-    uint8_t index;
+    LedState_e state;
+
     uint16_t times;
-    uint16_t on_time;
-    uint16_t off_time;
-} LedParams_t;
+    uint16_t on_time_ms;
+    uint16_t off_time_ms;
+
+    uint32_t last_time_ms;
+    uint16_t remaining;
+    uint8_t output_on;
+    uint8_t used;
+} LedRuntime_t;
 
 void LedDriver_Init(LedSettings_t* self, uint8_t count);
 void LedDriver_On(uint8_t ledIndex);
 void LedDriver_Off(uint8_t ledIndex);
 void LedDriver_Blink(uint8_t ledIndex, uint16_t times);
 void LedDriver_Flash(uint8_t ledIndex, uint16_t times);
+void LedDriver_TimerTask(void);
 
 #endif // DRIVER_H
