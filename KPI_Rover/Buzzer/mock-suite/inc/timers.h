@@ -17,6 +17,7 @@ struct StaticTimer_t {
 	uint8_t status;
 	TickType_t timer_ticks_left;
 
+	void * pvTimerID;
 	UBaseType_t uxAutoReload;
 	TickType_t xTimerPeriodInTicks;
 	TimerCallbackFunction_t pxCallbackFunction;

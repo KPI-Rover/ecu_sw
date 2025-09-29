@@ -89,6 +89,9 @@ void timers_run(void)
 		if (chosen_timer == NULL) {
 			chosen_timer = timer_queue[i];
 			timer_queue[i] = NULL;
+
+			if (chosen_timer->uxAutoReload)
+				xTimerStart(chosen_timer, chosen_timer->xTimerPeriodInTicks);
 		}
 	}
 
@@ -114,13 +117,14 @@ TimerHandle_t xTimerCreateStatic(
 	FAIL_ON_EQ(pxTimerBuffer->status & TIMER_CREATED, TIMER_CREATED, pxTimerBuffer, "CRIT", static_timer_recreation_count);
 	pxTimerBuffer->status = TIMER_CREATED;
 
-	FAIL_ON_LE(xTimerPeriodInTicks, 0, NULL, "CRIT", non_positive_timer_period_count);
 	pxTimerBuffer->xTimerPeriodInTicks = xTimerPeriodInTicks;
 
 	pxTimerBuffer->uxAutoReload = uxAutoReload;
 
 	FAIL_ON_EQ(pxCallbackFunction, NULL, NULL, "WARN", null_callback_function_specified_count);
 	pxTimerBuffer->pxCallbackFunction = pxCallbackFunction;
+
+	pxTimerBuffer->pvTimerID = pvTimerID;
 
 	return pxTimerBuffer;
 }
