@@ -4,6 +4,23 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef enum {
+    ADC_STATE_IDLE = 0,
+    ADC_STATE_REQUEST_CALIB_LOW,
+    ADC_STATE_CALIB_LOW_PENDING,
+    ADC_STATE_REQUEST_CALIB_HIGH,
+    ADC_STATE_CALIB_HIGH_PENDING,
+	ADC_STATE_MEASURE_VOLTAGE,
+    ADC_STATE_ERROR
+} adc_driver_state_t;
+
+typedef enum {
+    CAL_SUB_IDLE = 0,
+    CAL_SUB_WAIT_STABLE,
+    CAL_SUB_COLLECT,
+    CAL_SUB_COMPUTE
+} adc_calib_substate_t;
+
 typedef struct {
     uint16_t raw_low;
     uint16_t raw_high;
@@ -16,10 +33,12 @@ typedef void (*adc_callback_t)(uint8_t channel, uint16_t value);
 typedef struct {
     uint32_t next_voltage_tick;
     uint16_t voltage_raw;
+    float voltage_cal;
 } adc_measurements_t;
 
 extern adc_measurements_t adc_meas;
 
+extern uint32_t counter;
 
 void ADC_Driver_Init(const uint8_t* channels, size_t count);
 void ADC_Driver_Start(void);
@@ -30,5 +49,6 @@ float ADC_Driver_GetCalibratedValue(uint8_t channel);
 uint16_t ADC_Driver_GetLastValue(uint8_t channel);
 void ADC_Driver_RegisterCallback(adc_callback_t cb);
 void ADC_Driver_TimerTask(void);
+void ADC_Driver_ReadChannels(void);
 
 #endif
