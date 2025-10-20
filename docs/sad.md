@@ -1,5 +1,19 @@
 # Software Architecture Design - Chassis Controller (STM32)
 
+## How to View PlantUML Diagrams
+
+To view PlantUML diagrams in this document:
+
+1. Install **Visual Studio Code** with the **PlantUML** extension from: [https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)
+2. Configure the extension to use the PlantUML online render server:
+   - Open VS Code settings (File → Preferences → Settings)
+   - Search for "PlantUML: Server"
+   - Set the server URL to: `https://www.plantuml.com/plantuml`
+3. Open this Markdown file in VS Code.
+4. Use the Markdown preview feature to view rendered diagrams (Ctrl+Shift+V or right-click → "Open Preview").
+
+Alternatively, you can use the online PlantUML editor at [https://www.plantuml.com/plantuml](https://www.plantuml.com/plantuml) by copying the diagram code.
+
 ## Software Structure
 
 ```plantuml
@@ -27,6 +41,12 @@
 
     component "LEDsController" <<control>>
     component "BuzzerController" <<control>>
+    component "Logger"
+    component "FeeRTOS"
+
+    note top of "Logger"
+      Used by all components
+    end note
 
     [Communication Hub] .right.> [Database] : "use"
     
@@ -51,7 +71,7 @@
 - **Encoders Module**: Reads wheel encoder counts, calculate speed.
 - **LEDsController**: Controls visual indicators (LEDs).
 - **BuzzerController**: Controls audible alerts.
-
+- **Logger**: Provides logging output for all components.
 
 ## General Architecture Decisions
 
@@ -99,6 +119,174 @@ Each driver MUST be implemented as a state machine to handle its operational sta
 - Exceptions to the state machine approach (e.g. for extremely simple drivers or hardware with stateless operation) require architectural approval and explicit justification.
 
 ## Database
+This is the central configuration and state store used by all components to read settings and publish state/telemetry.
+
+The Database component provides a lightweight, type-safe parameter management system with persistent storage capabilities. It uses a metadata-driven approach where parameters are stored sequentially in a byte array, with their layout defined by a metadata table.
+
+### Architecture
+
+The Database component consists of two main parts:
+
+1. **ulDatabase**: Manages parameters in RAM, provides type-safe API for reading and writing parameters using unique IDs.
+2. **ulStorage**: Handles serialization and persistence of parameters marked as persistent to non-volatile memory (e.g., Flash, EEPROM).
+
+### Design Principles
+
+- **Metadata-driven layout**: Parameter positions in the data array are computed from metadata (offset and type), allowing flexible schema definition.
+- **Type safety**: Separate getter/setter functions per data type prevent type mismatches.
+- **Selective persistence**: Only parameters marked with the `persistent` flag are saved to non-volatile storage.
+- **Compact storage**: Parameters are stored sequentially in a byte array to minimize RAM footprint.
+- **Persistent parameters ordering**: All persistent parameters MUST be placed at the beginning of the metadata table. This allows efficient storage operations by treating persistent data as a contiguous block.
+- **Default values**: Each parameter has a default value stored in metadata as a float, which is type-cast during initialization or reset operations.
+
+### Class Diagram
+
+```plantuml
+    @startuml
+    enum ParamType {
+        UINT8
+        INT8
+        UINT16
+        INT16
+        UINT32
+        INT32
+        FLOAT
+    }
+
+    enum ParamId {
+        PARAM_MOTOR_P_GAIN
+        PARAM_HEADING_OFFSET
+        PARAM_BATTERY_LEVEL
+        PARAM_ENCODER_COUNT
+        PARAM_COUNT
+    }
+
+    class ParamMetadata {
+        - uint16_t offset
+        - ParamType type
+        - bool persistent
+        - float defaultValue
+        + getSize() : uint8_t
+    }
+
+    class ulDatabase {
+        - uint8_t* dataArray
+        - ParamMetadata* metadataTable
+        - uint16_t metadataCount
+        - uint16_t dataArraySize
+        + init(metadataTable, metadataCount) : bool
+        + setUint8(id, value) : bool
+        + getUint8(id, *value) : bool
+        + setInt8(id, value) : bool
+        + getInt8(id, *value) : bool
+        + setUint16(id, value) : bool
+        + getUint16(id, *value) : bool
+        + setInt16(id, value) : bool
+        + getInt16(id, *value) : bool
+        + setUint32(id, value) : bool
+        + getUint32(id, *value) : bool
+        + setInt32(id, value) : bool
+        + getInt32(id, *value) : bool
+        + setFloat(id, value) : bool
+        + getFloat(id, *value) : bool
+        - getMetadata(id) : ParamMetadata*
+        - validateId(id) : bool
+    }
+
+    class ulStorage {
+        - ulDatabase* database
+        + init(database) : bool
+        + save() : bool
+        + load() : bool
+        + erase() : bool
+        + factoryReset() : bool
+        - writePersistentParams() : bool
+        - readPersistentParams() : bool
+        - calculateChecksum() : uint32_t
+        - verifyChecksum() : bool
+    }
+
+    ulDatabase "1" *-- "many" ParamMetadata : contains
+    ulDatabase "1" o-- "1" ParamType : uses
+    ulDatabase "1" o-- "1" ParamId : uses
+    ulStorage "1" --> "1" ulDatabase : accesses
+    @enduml
+```
+
+### API Description
+
+#### ulDatabase
+
+**Public Methods:**
+- `init(metadataTable, metadataCount)`: Initializes the database with a metadata table defining all parameters. Calculates required data array size and allocates memory. Sets all parameters to their default values.
+- `setUint8/Int8/Uint16/Int16/Uint32/Int32/Float(id, value)`: Type-specific setters. Each validates the ID, checks type compatibility, and writes the value at the computed offset.
+- `getUint8/Int8/Uint16/Int16/Uint32/Int32/Float(id, *value)`: Type-specific getters. Each validates the ID, checks type compatibility, and reads the value from the computed offset.
+- `reset(id)`: Resets a parameter to its default value from metadata.
+- `resetAll()`: Resets all parameters to their default values.
+
+**Private Methods:**
+-
+
+#### ulStorage
+
+**Public Methods:**
+- `init(database)`: Initializes the storage module with a reference to the ulDatabase instance.
+- `save()`: Writes all parameters marked as `persistent` to non-volatile memory along with a checksum.
+- `load()`: Reads persistent parameters from non-volatile memory, verifies checksum, and updates the ulDatabase.
+- `erase()`: Erases persistent storage (factory reset).
+- `factoryReset()`: Erases persistent storage and resets all parameters to default values.
+
+**Private Methods:**
+- `writePersistentParams()`: Internal method to serialize and write persistent parameters.
+- `readPersistentParams()`: Internal method to read and deserialize persistent parameters.
+- `calculateChecksum()`: Computes CRC32 or similar checksum over persistent data.
+- `verifyChecksum()`: Validates data integrity after reading from storage.
+
+### Usage Example
+
+```c
+// Define parameter IDs as enum
+typedef enum {
+    // Persistent parameters MUST be first
+    PARAM_MOTOR_P_GAIN = 0,
+    PARAM_HEADING_OFFSET,
+    // Non-persistent parameters after
+    PARAM_BATTERY_LEVEL,
+    PARAM_ENCODER_COUNT,
+    PARAM_COUNT  // Total number of parameters
+} ParamId;
+
+// Define metadata table (persistent parameters at the beginning)
+ParamMetadata metadata[] = {
+    {.offset = 0,  .type = FLOAT,  .persistent = true,  .defaultValue = 1.5f},  // PARAM_MOTOR_P_GAIN
+    {.offset = 4,  .type = INT16,  .persistent = true,  .defaultValue = 0.0f},  // PARAM_HEADING_OFFSET
+    {.offset = 6,  .type = UINT8,  .persistent = false, .defaultValue = 0.0f},  // PARAM_BATTERY_LEVEL
+    {.offset = 7,  .type = UINT32, .persistent = false, .defaultValue = 0.0f},  // PARAM_ENCODER_COUNT
+};
+
+// Initialize (sets all parameters to default values)
+ulDatabase_init(metadata, PARAM_COUNT);
+ulStorage_init(&database);
+
+// Load persisted values (overrides defaults for persistent params)
+ulStorage_load();
+
+// Read/Write parameters using enum
+uint8_t battLevel;
+ulDatabase_getUint8(PARAM_BATTERY_LEVEL, &battLevel);
+
+float pGain = 1.5f;
+ulDatabase_setFloat(PARAM_MOTOR_P_GAIN, pGain);
+
+// Reset single parameter to default
+ulDatabase_reset(PARAM_MOTOR_P_GAIN);
+
+// Factory reset: erase storage and reset all to defaults
+ulStorage_factoryReset();
+
+// Save persistent parameters
+ulStorage_save();
+```
 
 ## Communication Hub
 
@@ -117,4 +305,6 @@ Each driver MUST be implemented as a state machine to handle its operational sta
 ## LEDsController
 
 ## BuzzerController
+
+## Logger
 
