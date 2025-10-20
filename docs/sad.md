@@ -1,6 +1,34 @@
 # Software Architecture Design - Chassis Controller (STM32)
+<!-- The markdown-toc utilitity is used to generate the Table of Contents -->
+<!-- Installation: npm install -g markdown-toc -->
+<!-- Usage: markdown-toc -i README.md -->
+<!-- toc -->
 
-## How to View PlantUML Diagrams
+- [Software Structure](#software-structure)
+- [General Architecture Decisions](#general-architecture-decisions)
+  * [SAD-D-1: Avoid direct communication between modules.](#sad-d-1-avoid-direct-communication-between-modules)
+  * [SAD-D-2: Use common module template for Sensors and Controls](#sad-d-2-use-common-module-template-for-sensors-and-controls)
+  * [SAD-D-3: The states of driver must be determinated](#sad-d-3-the-states-of-driver-must-be-determinated)
+- [Database](#database)
+  * [Architecture](#architecture)
+  * [Design Principles](#design-principles)
+  * [Class Diagram](#class-diagram)
+  * [API Description](#api-description)
+  * [Usage Example](#usage-example)
+- [Communication Hub](#communication-hub)
+- [MotorsController](#motorscontroller)
+- [ADC Module](#adc-module)
+- [IMU Module](#imu-module)
+- [Compass Module](#compass-module)
+- [GPS Module](#gps-module)
+- [Encoders Module](#encoders-module)
+- [LEDsController](#ledscontroller)
+- [BuzzerController](#buzzercontroller)
+- [Logger](#logger)
+
+<!-- tocstop -->
+
+**How to View PlantUML Diagrams**
 
 To view PlantUML diagrams in this document:
 
@@ -224,8 +252,6 @@ The Database component consists of two main parts:
 - `reset(id)`: Resets a parameter to its default value from metadata.
 - `resetAll()`: Resets all parameters to their default values.
 
-**Private Methods:**
--
 
 #### ulStorage
 
