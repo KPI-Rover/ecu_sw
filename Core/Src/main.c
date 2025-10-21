@@ -77,7 +77,7 @@ static void MX_TIM3_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
-
+void buzzer_manager_task(void *);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -157,6 +157,13 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   ul_ulog_init();
+
+  static const osThreadAttr_t buzzer_task_attrs = {
+    .name = "buzzer",
+    .stack_size = 64 * 4,
+    .priority = (osPriority_t) osPriorityHigh,
+  };
+  (void) osThreadNew(buzzer_manager_task, NULL, &buzzer_task_attrs);
 
   
   /* USER CODE END RTOS_THREADS */
