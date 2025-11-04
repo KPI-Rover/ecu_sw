@@ -55,5 +55,6 @@ bool ulDatabase_setInt32(struct ulDatabase * self, uint16_t id, int32_t value);
 bool ulDatabase_getInt32(struct ulDatabase * self, uint16_t id, int32_t *value);
 bool ulDatabase_setFloat(struct ulDatabase * self, uint16_t id, float value);
 bool ulDatabase_getFloat(struct ulDatabase * self, uint16_t id, float *value);
+bool ulDatabase_reset(struct ulDatabase * self, uint16_t id);
 struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(struct ulDatabase * self, uint16_t id);
 bool ulDatabase_validateId(struct ulDatabase * self, uint16_t id);
