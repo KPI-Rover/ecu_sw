@@ -30,3 +30,94 @@ void DriverMotors_SetSpeed(Motor_HandleTypeDef* motor, uint8_t speed_percent) {
     ULOG_INFO("SetSpeed %u%% -> compare=%lu period=%lu", speed_percent, compare, period);
 }
 
+void DriverMotors_TimerTask(Motor_HandleTypeDef* motor) {
+    uint32_t now = HAL_GetTick();
+    uint32_t elapsed = now - motor->state_entry_time_ms;
+
+    switch (motor->state) {
+
+        case MOTOR_STATE_STOP:
+
+            break;
+
+        case MOTOR_STATE_FORWARD:
+            switch (motor->substate) {
+                case MOTOR_SUBSTATE_ACCEL:
+                    if (motor->current_speed < motor->target_speed) {
+                        motor->current_speed += 15;
+                        DriverMotors_SetSpeed(motor, motor->current_speed);
+                    } else {
+                        motor->substate = MOTOR_SUBSTATE_CONSTANT;
+                    }
+                    break;
+
+                case MOTOR_SUBSTATE_CONSTANT:
+
+                    break;
+
+                case MOTOR_SUBSTATE_DECEL:
+                    if (motor->current_speed > 0) {
+                        if (motor->current_speed > 15)
+                            motor->current_speed -= 15;
+                        else
+                            motor->current_speed = 0;
+
+                        DriverMotors_SetSpeed(motor, motor->current_speed);
+                    } else {
+                        DriverMotors_SetSpeed(motor, 0);
+                        DriverMotors_Stop(motor);
+                        motor->state = MOTOR_STATE_STOP;
+                        motor->substate = MOTOR_SUBSTATE_NONE;
+                        ULOG_INFO("Motor stopped completely");
+                    }
+                    break;
+
+
+                default:
+                    break;
+            }
+            break;
+
+        case MOTOR_STATE_BACKWARD:
+        	switch (motor->substate) {
+				case MOTOR_SUBSTATE_ACCEL:
+					if (motor->current_speed < motor->target_speed) {
+						motor->current_speed += 15;
+						DriverMotors_SetSpeed(motor, motor->current_speed);
+					} else {
+						motor->substate = MOTOR_SUBSTATE_CONSTANT;
+					}
+					break;
+
+				case MOTOR_SUBSTATE_CONSTANT:
+
+					break;
+
+				case MOTOR_SUBSTATE_DECEL:
+				    if (motor->current_speed > 0) {
+				        if (motor->current_speed > 15)
+				            motor->current_speed -= 15;
+				        else
+				            motor->current_speed = 0;
+
+				        DriverMotors_SetSpeed(motor, motor->current_speed);
+				    } else {
+				        DriverMotors_SetSpeed(motor, 0);
+				        DriverMotors_Stop(motor);
+				        motor->state = MOTOR_STATE_STOP;
+				        motor->substate = MOTOR_SUBSTATE_NONE;
+				        ULOG_INFO("Motor stopped completely");
+				    }
+				    break;
+
+
+				default:
+					break;
+			}
+            break;
+
+        default:
+            break;
+    }
+}
+
