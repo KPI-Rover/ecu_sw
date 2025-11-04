@@ -64,31 +64,8 @@ bool ulDatabase_init(struct ulDatabase * self, struct ulDatabase_ParamMetadata *
 	}
 
 	// fill db memory with default values
-	for (size_t i = 0; i < metadataCount; i++) {
-		switch (metadataTable[i].type) {
-		case UINT8:
-			*((uint8_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case INT8:
-			*((int8_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case UINT16:
-			*((uint16_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case INT16:
-			*((int16_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case UINT32:
-			*((uint32_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case INT32:
-			*((int32_t *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		case FLOAT:
-			*((float *) &(self->dataArray[metadataTable[i].offset])) = metadataTable[i].defaultValue;
-			break;
-		}
-	}
+	for (uint16_t i = 0; i < metadataCount; i++)
+		ulDatabase_reset(self, i);
 
 	// save metadata for allocated db + metadata size
 	self->dataArraySize = db_size;
@@ -333,6 +310,44 @@ bool ulDatabase_getFloat(struct ulDatabase * self, uint16_t id, float *value)
 
 	DB_LOCK(id);
 	*value = *((float *) &(self->dataArray[p->offset]));
+	DB_FREE(id);
+
+	return true;
+}
+
+bool ulDatabase_reset(struct ulDatabase * self, uint16_t id)
+{
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+
+	if (p == NULL)
+		return false;
+
+	DB_LOCK(id);
+
+	switch (p->type) {
+	case UINT8:
+		*((uint8_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case INT8:
+		*((int8_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case UINT16:
+		*((uint16_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case INT16:
+		*((int16_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case UINT32:
+		*((uint32_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case INT32:
+		*((int32_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	case FLOAT:
+		*((float *) &(self->dataArray[p->offset])) = p->defaultValue;
+		break;
+	}
+
 	DB_FREE(id);
 
 	return true;
