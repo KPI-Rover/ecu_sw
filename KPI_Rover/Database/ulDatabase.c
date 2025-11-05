@@ -63,16 +63,16 @@ bool ulDatabase_init(struct ulDatabase * self, struct ulDatabase_ParamMetadata *
 		}
 	}
 
-	// fill db memory with default values
-	for (uint16_t i = 0; i < metadataCount; i++)
-		ulDatabase_reset(self, i);
-
 	// save metadata for allocated db + metadata size
 	self->dataArraySize = db_size;
 	self->metadataCount = metadataCount;
 
 	// save metadata table location
 	self->metadataTable = metadataTable;
+
+	// fill db memory with default values
+	for (uint16_t i = 0; i < metadataCount; i++)
+		ulDatabase_reset(self, i);
 
 	return true;
 }
