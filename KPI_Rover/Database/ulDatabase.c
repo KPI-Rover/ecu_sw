@@ -8,7 +8,9 @@
 static osMutexId_t ulDatabase_mutex;
 StaticSemaphore_t *ulDatabase_mutex_cb;
 
-bool ulDatabase_init(struct ulDatabase * self, struct ulDatabase_ParamMetadata * metadataTable, uint16_t metadataCount)
+static struct ulDatabase db;
+
+bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t metadataCount)
 {
 	// calculate DB size and assign correct offsets
 	uint16_t db_size = 0;
@@ -40,7 +42,7 @@ bool ulDatabase_init(struct ulDatabase * self, struct ulDatabase_ParamMetadata *
 		if (db_mem == NULL)
 			return false;
 
-		self->dataArray = (uint8_t *) db_mem;
+		db.dataArray = (uint8_t *) db_mem;
 	}
 
 	// create mutexes for every parameter
@@ -57,22 +59,22 @@ bool ulDatabase_init(struct ulDatabase * self, struct ulDatabase_ParamMetadata *
 	}
 
 	// save metadata for allocated db + metadata size
-	self->dataArraySize = db_size;
-	self->metadataCount = metadataCount;
+	db.dataArraySize = db_size;
+	db.metadataCount = metadataCount;
 
 	// save metadata table location
-	self->metadataTable = metadataTable;
+	db.metadataTable = metadataTable;
 
 	// fill db memory with default values
 	for (uint16_t i = 0; i < metadataCount; i++)
-		ulDatabase_reset(self, i);
+		ulDatabase_reset(i);
 
 	return true;
 }
 
-bool ulDatabase_setUint8(struct ulDatabase * self, uint16_t id, uint8_t value)
+bool ulDatabase_setUint8(uint16_t id, uint8_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -81,15 +83,15 @@ bool ulDatabase_setUint8(struct ulDatabase * self, uint16_t id, uint8_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint8_t *) &(self->dataArray[p->offset])) = value;
+	*((uint8_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getUint8(struct ulDatabase * self, uint16_t id, uint8_t *value)
+bool ulDatabase_getUint8(uint16_t id, uint8_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -98,15 +100,15 @@ bool ulDatabase_getUint8(struct ulDatabase * self, uint16_t id, uint8_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((uint8_t *) &(self->dataArray[p->offset]));
+	*value = *((uint8_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setInt8(struct ulDatabase * self, uint16_t id, int8_t value)
+bool ulDatabase_setInt8(uint16_t id, int8_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -115,15 +117,15 @@ bool ulDatabase_setInt8(struct ulDatabase * self, uint16_t id, int8_t value)
 		return false;
 
 	DB_LOCK();
-	*((int8_t *) &(self->dataArray[p->offset])) = value;
+	*((int8_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getInt8(struct ulDatabase * self, uint16_t id, int8_t *value)
+bool ulDatabase_getInt8(uint16_t id, int8_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -132,15 +134,15 @@ bool ulDatabase_getInt8(struct ulDatabase * self, uint16_t id, int8_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int8_t *) &(self->dataArray[p->offset]));
+	*value = *((int8_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setUint16(struct ulDatabase * self, uint16_t id, uint16_t value)
+bool ulDatabase_setUint16(uint16_t id, uint16_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -149,15 +151,15 @@ bool ulDatabase_setUint16(struct ulDatabase * self, uint16_t id, uint16_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint16_t *) &(self->dataArray[p->offset])) = value;
+	*((uint16_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getUint16(struct ulDatabase * self, uint16_t id, uint16_t *value)
+bool ulDatabase_getUint16(uint16_t id, uint16_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -166,15 +168,15 @@ bool ulDatabase_getUint16(struct ulDatabase * self, uint16_t id, uint16_t *value
 		return false;
 
 	DB_LOCK();
-	*value = *((uint16_t *) &(self->dataArray[p->offset]));
+	*value = *((uint16_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setInt16(struct ulDatabase * self, uint16_t id, int16_t value)
+bool ulDatabase_setInt16(uint16_t id, int16_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -183,15 +185,15 @@ bool ulDatabase_setInt16(struct ulDatabase * self, uint16_t id, int16_t value)
 		return false;
 
 	DB_LOCK();
-	*((int16_t *) &(self->dataArray[p->offset])) = value;
+	*((int16_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getInt16(struct ulDatabase * self, uint16_t id, int16_t *value)
+bool ulDatabase_getInt16(uint16_t id, int16_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -200,15 +202,15 @@ bool ulDatabase_getInt16(struct ulDatabase * self, uint16_t id, int16_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int16_t *) &(self->dataArray[p->offset]));
+	*value = *((int16_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setUint32(struct ulDatabase * self, uint16_t id, uint32_t value)
+bool ulDatabase_setUint32(uint16_t id, uint32_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -217,15 +219,15 @@ bool ulDatabase_setUint32(struct ulDatabase * self, uint16_t id, uint32_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint32_t *) &(self->dataArray[p->offset])) = value;
+	*((uint32_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getUint32(struct ulDatabase * self, uint16_t id, uint32_t *value)
+bool ulDatabase_getUint32(uint16_t id, uint32_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -234,15 +236,15 @@ bool ulDatabase_getUint32(struct ulDatabase * self, uint16_t id, uint32_t *value
 		return false;
 
 	DB_LOCK();
-	*value = *((uint32_t *) &(self->dataArray[p->offset]));
+	*value = *((uint32_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setInt32(struct ulDatabase * self, uint16_t id, int32_t value)
+bool ulDatabase_setInt32(uint16_t id, int32_t value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -251,15 +253,15 @@ bool ulDatabase_setInt32(struct ulDatabase * self, uint16_t id, int32_t value)
 		return false;
 
 	DB_LOCK();
-	*((int32_t *) &(self->dataArray[p->offset])) = value;
+	*((int32_t *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getInt32(struct ulDatabase * self, uint16_t id, int32_t *value)
+bool ulDatabase_getInt32(uint16_t id, int32_t *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -268,15 +270,15 @@ bool ulDatabase_getInt32(struct ulDatabase * self, uint16_t id, int32_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int32_t *) &(self->dataArray[p->offset]));
+	*value = *((int32_t *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_setFloat(struct ulDatabase * self, uint16_t id, float value)
+bool ulDatabase_setFloat(uint16_t id, float value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -285,15 +287,15 @@ bool ulDatabase_setFloat(struct ulDatabase * self, uint16_t id, float value)
 		return false;
 
 	DB_LOCK();
-	*((float *) &(self->dataArray[p->offset])) = value;
+	*((float *) &(db.dataArray[p->offset])) = value;
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_getFloat(struct ulDatabase * self, uint16_t id, float *value)
+bool ulDatabase_getFloat(uint16_t id, float *value)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -302,15 +304,15 @@ bool ulDatabase_getFloat(struct ulDatabase * self, uint16_t id, float *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((float *) &(self->dataArray[p->offset]));
+	*value = *((float *) &(db.dataArray[p->offset]));
 	DB_FREE();
 
 	return true;
 }
 
-bool ulDatabase_reset(struct ulDatabase * self, uint16_t id)
+bool ulDatabase_reset(uint16_t id)
 {
-	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(self, id);
+	struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(id);
 
 	if (p == NULL)
 		return false;
@@ -319,25 +321,25 @@ bool ulDatabase_reset(struct ulDatabase * self, uint16_t id)
 
 	switch (p->type) {
 	case UINT8:
-		*((uint8_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((uint8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case INT8:
-		*((int8_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((int8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case UINT16:
-		*((uint16_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((uint16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case INT16:
-		*((int16_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((int16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case UINT32:
-		*((uint32_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((uint32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case INT32:
-		*((int32_t *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((int32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	case FLOAT:
-		*((float *) &(self->dataArray[p->offset])) = p->defaultValue;
+		*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	}
 
@@ -346,15 +348,15 @@ bool ulDatabase_reset(struct ulDatabase * self, uint16_t id)
 	return true;
 }
 
-struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(struct ulDatabase * self, uint16_t id)
+struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
 {
-	if (!ulDatabase_validateId(self, id))
+	if (!ulDatabase_validateId(id))
 		return NULL;
 
-	return &(self->metadataTable[id]);
+	return &(db.metadataTable[id]);
 }
 
-bool ulDatabase_validateId(struct ulDatabase * self, uint16_t id)
+bool ulDatabase_validateId(uint16_t id)
 {
-	return self->metadataCount > id;
+	return db.metadataCount > id;
 }
