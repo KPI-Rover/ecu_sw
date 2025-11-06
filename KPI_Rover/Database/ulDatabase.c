@@ -39,22 +39,7 @@ bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t m
 
 	for (size_t i = 0; i < metadataCount; i++) {
 		metadataTable[i].offset = db_size;
-
-		switch (metadataTable[i].type) {
-		case UINT8:
-		case INT8:
-			db_size += 1;
-			break;
-		case UINT16:
-		case INT16:
-			db_size += 2;
-			break;
-		case UINT32:
-		case INT32:
-		case FLOAT:
-			db_size += 4;
-			break;
-		}
+		db_size += ulDatabase_ParamMetadata_getSize(&metadataTable[i]);
 	}
 
 	// allocate memory for DB
