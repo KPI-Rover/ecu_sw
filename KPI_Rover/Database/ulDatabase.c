@@ -188,7 +188,7 @@ bool ulDatabase_setInt16(uint16_t id, int16_t value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != INT16)
 		return false;
 
 	DB_LOCK();
@@ -205,7 +205,7 @@ bool ulDatabase_getInt16(uint16_t id, int16_t *value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != INT16)
 		return false;
 
 	DB_LOCK();
@@ -222,7 +222,7 @@ bool ulDatabase_setUint32(uint16_t id, uint32_t value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != UINT32)
 		return false;
 
 	DB_LOCK();
@@ -239,7 +239,7 @@ bool ulDatabase_getUint32(uint16_t id, uint32_t *value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != UINT32)
 		return false;
 
 	DB_LOCK();
@@ -256,7 +256,7 @@ bool ulDatabase_setInt32(uint16_t id, int32_t value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != INT32)
 		return false;
 
 	DB_LOCK();
@@ -273,7 +273,7 @@ bool ulDatabase_getInt32(uint16_t id, int32_t *value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != INT32)
 		return false;
 
 	DB_LOCK();
@@ -290,7 +290,7 @@ bool ulDatabase_setFloat(uint16_t id, float value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != FLOAT)
 		return false;
 
 	DB_LOCK();
@@ -307,7 +307,7 @@ bool ulDatabase_getFloat(uint16_t id, float *value)
 	if (p == NULL)
 		return false;
 
-	if (p->type != UINT16)
+	if (p->type != FLOAT)
 		return false;
 
 	DB_LOCK();
