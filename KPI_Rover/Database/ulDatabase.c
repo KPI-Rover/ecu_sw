@@ -357,11 +357,38 @@ bool ulDatabase_reset(uint16_t id)
 
 bool ulDatabase_resetAll(void)
 {
+	DB_LOCK();
+	
 	for (uint16_t i = 0; i < db.metadataCount; i++) {
-		if (!ulDatabase_reset(i)) {
-			return false;
+		struct ulDatabase_ParamMetadata *p = &(db.metadataTable[i]);
+		
+		switch (p->type) {
+		case UINT8:
+			*((uint8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case INT8:
+			*((int8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case UINT16:
+			*((uint16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case INT16:
+			*((int16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case UINT32:
+			*((uint32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case INT32:
+			*((int32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
+		case FLOAT:
+			*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
+			break;
 		}
 	}
+	
+	DB_FREE();
+	
 	return true;
 }
 
