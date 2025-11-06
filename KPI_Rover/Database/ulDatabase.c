@@ -13,6 +13,7 @@ static struct ulDatabase db;
 // Private function declarations
 static struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id);
 static bool ulDatabase_validateId(uint16_t id);
+static void ulDatabase_resetParameter(struct ulDatabase_ParamMetadata *p);
 
 uint16_t ulDatabase_ParamMetadata_getSize(struct ulDatabase_ParamMetadata * self)
 {
@@ -325,7 +326,27 @@ bool ulDatabase_reset(uint16_t id)
 		return false;
 
 	DB_LOCK();
+	ulDatabase_resetParameter(p);
+	DB_FREE();
 
+	return true;
+}
+
+bool ulDatabase_resetAll(void)
+{
+	DB_LOCK();
+	
+	for (uint16_t i = 0; i < db.metadataCount; i++) {
+		ulDatabase_resetParameter(&(db.metadataTable[i]));
+	}
+	
+	DB_FREE();
+	
+	return true;
+}
+
+static void ulDatabase_resetParameter(struct ulDatabase_ParamMetadata *p)
+{
 	switch (p->type) {
 	case UINT8:
 		*((uint8_t *) &(db.dataArray[p->offset])) = (uint8_t) p->defaultValue;
@@ -349,47 +370,6 @@ bool ulDatabase_reset(uint16_t id)
 		*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
 		break;
 	}
-
-	DB_FREE();
-
-	return true;
-}
-
-bool ulDatabase_resetAll(void)
-{
-	DB_LOCK();
-	
-	for (uint16_t i = 0; i < db.metadataCount; i++) {
-		struct ulDatabase_ParamMetadata *p = &(db.metadataTable[i]);
-		
-		switch (p->type) {
-		case UINT8:
-			*((uint8_t *) &(db.dataArray[p->offset])) = (uint8_t) p->defaultValue;
-			break;
-		case INT8:
-			*((int8_t *) &(db.dataArray[p->offset])) = (int8_t) p->defaultValue;
-			break;
-		case UINT16:
-			*((uint16_t *) &(db.dataArray[p->offset])) = (uint16_t) p->defaultValue;
-			break;
-		case INT16:
-			*((int16_t *) &(db.dataArray[p->offset])) = (int16_t) p->defaultValue;
-			break;
-		case UINT32:
-			*((uint32_t *) &(db.dataArray[p->offset])) = (uint32_t) p->defaultValue;
-			break;
-		case INT32:
-			*((int32_t *) &(db.dataArray[p->offset])) = (int32_t) p->defaultValue;
-			break;
-		case FLOAT:
-			*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
-			break;
-		}
-	}
-	
-	DB_FREE();
-	
-	return true;
 }
 
 static struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
