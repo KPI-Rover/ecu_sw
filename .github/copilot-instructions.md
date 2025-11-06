@@ -1,0 +1,1 @@
+- Please make sure that implementation matches the Architecture Design defined in docs/sad.md
