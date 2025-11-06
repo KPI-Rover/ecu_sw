@@ -1,20 +1,13 @@
 # Software Architecture Design - Chassis Controller (STM32)
 <!-- The markdown-toc utilitity is used to generate the Table of Contents -->
 <!-- Installation: npm install -g markdown-toc -->
-<!-- Usage: markdown-toc -i README.md -->
+<!-- Usage: markdown-toc --maxdepth 2 -i docs/sad.md -->
+
 <!-- toc -->
 
 - [Software Structure](#software-structure)
 - [General Architecture Decisions](#general-architecture-decisions)
-  * [SAD-D-1: Avoid direct communication between modules.](#sad-d-1-avoid-direct-communication-between-modules)
-  * [SAD-D-2: Use common module template for Sensors and Controls](#sad-d-2-use-common-module-template-for-sensors-and-controls)
-  * [SAD-D-3: The states of driver must be determinated](#sad-d-3-the-states-of-driver-must-be-determinated)
 - [Database](#database)
-  * [Architecture](#architecture)
-  * [Design Principles](#design-principles)
-  * [Class Diagram](#class-diagram)
-  * [API Description](#api-description)
-  * [Usage Example](#usage-example)
 - [Communication Hub](#communication-hub)
 - [MotorsController](#motorscontroller)
 - [ADC Module](#adc-module)
@@ -127,7 +120,7 @@ Separate low-level device handling (Driver) from project integration (Utility) t
   - ul\<Name\>.h
   - ul\<Name\>.c
 
-where <Name> is the component short name (e.g. drvImu.c / ulImu.c)
+where \<Name> is the component short name (e.g. drvImu.c / ulImu.c)
 
 **Exceptions:**
 - Any exception (e.g. extreme real-time constraints) requires architectural justification and explicit approval.
@@ -314,23 +307,598 @@ ulStorage_factoryReset();
 ulStorage_save();
 ```
 
+### List of parameters
+
+Below is a table of Database parameters used by the MotorsController:
+
+| Name                        | Type   | Description                                 | Persistent | Default Value |
+|-----------------------------|--------|---------------------------------------------|------------|--------------|
+| MOTOR_FL_KP                 | float  | PID Kp coefficient for front-left motor     | yes        | (project default) |
+| MOTOR_FL_KI                 | float  | PID Ki coefficient for front-left motor     | yes        | (project default) |
+| MOTOR_FL_KD                 | float  | PID Kd coefficient for front-left motor     | yes        | (project default) |
+| MOTOR_FR_KP                 | float  | PID Kp coefficient for front-right motor    | yes        | (project default) |
+| MOTOR_FR_KI                 | float  | PID Ki coefficient for front-right motor    | yes        | (project default) |
+| MOTOR_FR_KD                 | float  | PID Kd coefficient for front-right motor    | yes        | (project default) |
+| MOTOR_RL_KP                 | float  | PID Kp coefficient for rear-left motor      | yes        | (project default) |
+| MOTOR_RL_KI                 | float  | PID Ki coefficient for rear-left motor      | yes        | (project default) |
+| MOTOR_RL_KD                 | float  | PID Kd coefficient for rear-left motor      | yes        | (project default) |
+| MOTOR_RR_KP                 | float  | PID Kp coefficient for rear-right motor     | yes        | (project default) |
+| MOTOR_RR_KI                 | float  | PID Ki coefficient for rear-right motor     | yes        | (project default) |
+| MOTOR_RR_KD                 | float  | PID Kd coefficient for rear-right motor     | yes        | (project default) |
+| MOTOR_FL_SETPOINT           | int32  | Target RPM for front-left motor             | no         | 0            |
+| MOTOR_FR_SETPOINT           | int32  | Target RPM for front-right motor            | no         | 0            |
+| MOTOR_RL_SETPOINT           | int32  | Target RPM for rear-left motor              | no         | 0            |
+| MOTOR_RR_SETPOINT           | int32  | Target RPM for rear-right motor             | no         | 0            |
+| MOTOR_FL_RPM                | int32  | Measured RPM for front-left motor           | no         | 0            |
+| MOTOR_FR_RPM                | int32  | Measured RPM for front-right motor          | no         | 0            |
+| MOTOR_RL_RPM                | int32  | Measured RPM for rear-left motor            | no         | 0            |
+| MOTOR_RR_RPM                | int32  | Measured RPM for rear-right motor           | no         | 0            |
+| MOTORS_CONTROL_PERIOD_MS    | uint16 | Control loop period in milliseconds         | yes        | 10           |
+
 ## Communication Hub
+
+The Communication Hub manages external communication interfaces, providing a unified interface for data exchange between the chassis controller and external systems.
+
+### Architecture
+
+The Communication Hub component consists of two main parts:
+
+1. **drvComHub**: Low-level communication driver handling protocol implementation and hardware interfaces.
+2. **ulComHub**: Utility layer integrating the driver with the Database and implementing communication tasks.
+
+### Design Principles
+
+- Protocol abstraction for UART, CAN, USB, etc.
+- Message routing to/from Database.
+- Error handling and communication health monitoring.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvComHub
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulComHub
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
 
 ## MotorsController
 
+The MotorsController is responsible for precise speed control of each motor using closed-loop PID regulation. It coordinates the reading of configuration and runtime parameters from the Database, executes the control loop, and commands the motor drivers accordingly.
+
+### Architecture
+
+The MotorsController component consists of four motor driver instances and a utility layer:
+
+1. **drvMotors**: Low-level driver handling PWM generation and motor control for each motor.
+2. **ulMotorsController**: Utility layer that manages control logic, interacts with the Database, and contains PID regulation for each motor as members.
+3. **ulPID**: Each ulMotorsController instance contains four ulPID members for closed-loop speed control.
+
+### Design Principles
+
+- **Database-driven configuration**: On startup, `ulMotorsController` reads PID coefficients (Kp, Ki, Kd) for each motor from the Database and configures the corresponding `ulPID` member.
+- **Periodic control loop**: `ulMotorsController` runs a periodic task (period is a parameter stored in the Database) that:
+  - Reads the current setpoint (target RPM) and measured RPM for each motor from the Database.
+  - Passes these values to the corresponding `ulPID` member, which computes the required PWM output.
+  - Sends the computed PWM value to the appropriate `drvMotors` driver for actuation.
+- **Parameterization**: The control loop period and all PID coefficients are configurable via the Database, allowing runtime tuning and adaptation.
+- **Separation of concerns**: `ulMotorsController` handles high-level control logic and Database interaction, while each `drvMotors` is responsible for hardware actuation.
+
+### Class Diagram
+
+```plantuml
+@startuml
+class ulPID {
+    -float kp
+    -float ki
+    -float kd
+    -float integral
+    -float prevError
+    +init(kp, ki, kd)
+    +reset()
+    +compute(setpointRPM, currentRPM) : float
+    ...
+}
+
+class drvMotor {
+    +init()
+    +disable()
+    +enable()
+    +setPwm(pwmValue)
+    ...
+}
+
+class ulMotorsController {
+    -drvMotor motors[4]
+    -ulPID pids[4]
+    -periodMs
+    +init()
+    +run()
+    ...
+}
+
+ulMotorsController *-- "drvMotor" : 4
+ulMotorsController *-- "ulPID" : 4
+
+@enduml
+```
+
+### API Description
+
+#### ulMotorsController
+- `init()`: Initialize all motors and PID controllers, load configuration from Database.
+- `run()`: Execute the periodic control loop (read setpoints and feedback, compute PID, update motors).
+
+#### drvMotors
+- `init()`: Initialize the motor driver hardware.
+- `enable()`: Enable the motor output. After calling `enable()`, `setPwm()` commands are accepted.
+- `disable()`: Disable the motor output (safe state). After calling `disable()`, PWM is forced to 0 and further `setPwm()` calls have no effect until `enable()` is called again.
+- `setPwm(pwmValue)`: Set the PWM value for the motor (only works if enabled).
+
+#### ulPID
+- `init(kp, ki, kd)`: Initialize the PID controller with given coefficients.
+- `reset()`: Reset the PID internal state (integral, previous error).
+- `compute(setpoint, measured)`: Calculate the control output based on setpoint and measured value.
+- `setParams(kp, ki, kd)`: Update PID coefficients.
+
+### Dynamic Behavior
+
+#### Initialization
+
+```plantuml
+@startuml
+actor System
+participant ulMotorsController
+participant drvMotor as "drvMotor[4]"
+participant ulPID as "ulPID[4]"
+participant Database
+
+System -> ulMotorsController: init()
+loop for each motor
+    ulMotorsController -> Database: getFloat(MOTOR_XX_KP, &kp)
+    ulMotorsController -> Database: getFloat(MOTOR_XX_KI, &ki)
+    ulMotorsController -> Database: getFloat(MOTOR_XX_KD, &kd)
+    ulMotorsController -> ulPID: init(kp, ki, kd)
+    ulMotorsController -> drvMotor: init()
+    ulMotorsController -> drvMotor: enable()
+end
+ulMotorsController -> Database: getUint16(MOTORS_CONTROL_PERIOD_MS, &periodMs)
+@enduml
+```
+
+#### Control Loop
+
+```plantuml
+@startuml
+actor RTOS
+participant ulMotorsController
+participant drvMotor as "drvMotor[4]"
+participant ulPID as "ulPID[4]"
+participant Database
+
+RTOS -> ulMotorsController: run()
+loop for each motor
+    ulMotorsController -> Database: getInt32(MOTOR_XX_SETPOINT, &setpoint)
+    ulMotorsController -> Database: getInt32(MOTOR_XX_RPM, &rpm)
+    ulMotorsController -> ulPID: compute(setpoint, rpm)
+    ulPID -> ulMotorsController: pwm value
+    ulMotorsController -> drvMotor: setPwm(pwmValue)
+end
+@enduml
+```
+
+#### Disable / Enable
+
+```plantuml
+@startuml
+participant ulMotorsController
+participant drvMotor as "drvMotor[4]"
+
+ulMotorsController -> drvMotor: disable()
+drvMotor -> drvMotor: setPwm(0)
+...
+ulMotorsController -> drvMotor: setPwm()
+note right of drvMotor
+  setPwm() will be ignored until enable() is called
+end note
+...
+ulMotorsController -> drvMotor: enable()
+...
+ulMotorsController -> drvMotor: setPwm()
+note right of drvMotor
+  setPwm() accepted
+end note
+@enduml
+```
+
 ## ADC Module
+
+The ADC Module samples analog channels (battery voltage, current sensors, etc.) and provides filtered measurement data to the Database.
+
+### Architecture
+
+The ADC Module component consists of two main parts:
+
+1. **drvAdc**: Low-level ADC driver handling hardware configuration and raw sample acquisition.
+2. **ulAdc**: Utility layer implementing filtering, calibration, and Database updates.
+
+### Design Principles
+
+- Multi-channel sampling.
+- Signal filtering and calibration.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvAdc
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulAdc
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
 
 ## IMU Module
 
+The IMU Module provides accelerometer and gyroscope data for motion sensing and orientation estimation.
+
+### Architecture
+
+The IMU Module component consists of two main parts:
+
+1. **drvImu**: Low-level IMU driver handling I2C/SPI communication and sensor configuration.
+2. **ulImu**: Utility layer implementing data fusion, calibration, and Database updates.
+
+### Design Principles
+
+- Sensor fusion and calibration.
+- High-rate sampling.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvImu
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulImu
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
+
 ## Compass Module
+
+The Compass Module provides heading information using magnetometer data for navigation and orientation.
+
+### Architecture
+
+The Compass Module component consists of two main parts:
+
+1. **drvCompass**: Low-level magnetometer driver handling I2C communication and sensor configuration.
+2. **ulCompass**: Utility layer implementing heading calculation, calibration, and Database updates.
+
+### Design Principles
+
+- Magnetic calibration and tilt compensation.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvCompass
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulCompass
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
 
 ## GPS Module
 
+The GPS Module provides position, velocity, and time information for navigation and localization.
+
+### Architecture
+
+The GPS Module component consists of two main parts:
+
+1. **drvGps**: Low-level GPS driver handling UART communication and protocol parsing.
+2. **ulGps**: Utility layer implementing data validation, conversion, and Database updates.
+
+### Design Principles
+
+- Protocol support and fix quality monitoring.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvGps
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulGps
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
+
 ## Encoders Module
+
+The Encoders Module reads wheel encoder counts and calculates wheel speed for odometry and motor control.
+
+### Architecture
+
+The Encoders Module component consists of two main parts:
+
+1. **drvEncoders**: Low-level encoder driver handling timer/capture hardware and pulse counting.
+2. **ulEncoders**: Utility layer implementing speed calculation, direction detection, and Database updates.
+
+### Design Principles
+
+- High-resolution counting and speed calculation.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvEncoders
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulEncoders
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
 
 ## LEDsController
 
+The LEDsController manages visual indicators (LEDs) for system status, alerts, and user feedback.
+
+### Architecture
+
+The LEDsController component consists of two main parts:
+
+1. **drvLeds**: Low-level LED driver handling GPIO control and PWM for brightness.
+2. **ulLeds**: Utility layer implementing patterns, animations, and Database-driven control.
+
+### Design Principles
+
+- Pattern library and priority management.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvLeds
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulLeds
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
+
 ## BuzzerController
 
+The BuzzerController manages audible alerts for warnings, errors, and user feedback.
+
+### Architecture
+
+The BuzzerController component consists of two main parts:
+
+1. **drvBuzzer**: Low-level buzzer driver handling PWM frequency generation.
+2. **ulBuzzer**: Utility layer implementing tones, melodies, and Database-driven control.
+
+### Design Principles
+
+- Tone generation and melody sequences.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### drvBuzzer
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+#### ulBuzzer
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
+
 ## Logger
+
+The Logger provides centralized logging functionality for all components, supporting multiple output channels and log levels.
+
+### Architecture
+
+The Logger is implemented as a standalone utility component:
+
+1. **ulLogger**: Logging utility providing formatted output to multiple destinations (UART, file, etc.).
+
+### Design Principles
+
+- Multi-channel output and severity levels.
+
+### Class Diagram
+
+```plantuml
+@startuml
+' TODO: Add class diagram
+@enduml
+```
+
+### API Description
+
+#### ulLogger
+
+**Public Methods:**
+- TODO
+
+**Private Methods:**
+- TODO
+
+### Usage Example
+
+```c
+// TODO: Add usage example
+```
 
