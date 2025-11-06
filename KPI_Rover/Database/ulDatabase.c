@@ -10,6 +10,28 @@ StaticSemaphore_t *ulDatabase_mutex_cb;
 
 static struct ulDatabase db;
 
+// Private function declarations
+static struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id);
+static bool ulDatabase_validateId(uint16_t id);
+
+uint16_t ulDatabase_ParamMetadata_getSize(struct ulDatabase_ParamMetadata * self)
+{
+	switch (self->type) {
+	case UINT8:
+	case INT8:
+		return 1;
+	case UINT16:
+	case INT16:
+		return 2;
+	case UINT32:
+	case INT32:
+	case FLOAT:
+		return 4;
+	default:
+		return 0;
+	}
+}
+
 bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t metadataCount)
 {
 	// calculate DB size and assign correct offsets
@@ -45,7 +67,7 @@ bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t m
 		db.dataArray = (uint8_t *) db_mem;
 	}
 
-	// create mutexes for every parameter
+	// create global mutex for database access
 	{
 		ulDatabase_mutex_cb = malloc(sizeof(StaticSemaphore_t));
 
@@ -348,7 +370,17 @@ bool ulDatabase_reset(uint16_t id)
 	return true;
 }
 
-struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
+bool ulDatabase_resetAll(void)
+{
+	for (uint16_t i = 0; i < db.metadataCount; i++) {
+		if (!ulDatabase_reset(i)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
 {
 	if (!ulDatabase_validateId(id))
 		return NULL;
@@ -356,7 +388,7 @@ struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
 	return &(db.metadataTable[id]);
 }
 
-bool ulDatabase_validateId(uint16_t id)
+static bool ulDatabase_validateId(uint16_t id)
 {
 	return db.metadataCount > id;
 }
