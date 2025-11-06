@@ -328,22 +328,22 @@ bool ulDatabase_reset(uint16_t id)
 
 	switch (p->type) {
 	case UINT8:
-		*((uint8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((uint8_t *) &(db.dataArray[p->offset])) = (uint8_t) p->defaultValue;
 		break;
 	case INT8:
-		*((int8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((int8_t *) &(db.dataArray[p->offset])) = (int8_t) p->defaultValue;
 		break;
 	case UINT16:
-		*((uint16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((uint16_t *) &(db.dataArray[p->offset])) = (uint16_t) p->defaultValue;
 		break;
 	case INT16:
-		*((int16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((int16_t *) &(db.dataArray[p->offset])) = (int16_t) p->defaultValue;
 		break;
 	case UINT32:
-		*((uint32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((uint32_t *) &(db.dataArray[p->offset])) = (uint32_t) p->defaultValue;
 		break;
 	case INT32:
-		*((int32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		*((int32_t *) &(db.dataArray[p->offset])) = (int32_t) p->defaultValue;
 		break;
 	case FLOAT:
 		*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
@@ -364,22 +364,22 @@ bool ulDatabase_resetAll(void)
 		
 		switch (p->type) {
 		case UINT8:
-			*((uint8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((uint8_t *) &(db.dataArray[p->offset])) = (uint8_t) p->defaultValue;
 			break;
 		case INT8:
-			*((int8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((int8_t *) &(db.dataArray[p->offset])) = (int8_t) p->defaultValue;
 			break;
 		case UINT16:
-			*((uint16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((uint16_t *) &(db.dataArray[p->offset])) = (uint16_t) p->defaultValue;
 			break;
 		case INT16:
-			*((int16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((int16_t *) &(db.dataArray[p->offset])) = (int16_t) p->defaultValue;
 			break;
 		case UINT32:
-			*((uint32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((uint32_t *) &(db.dataArray[p->offset])) = (uint32_t) p->defaultValue;
 			break;
 		case INT32:
-			*((int32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+			*((int32_t *) &(db.dataArray[p->offset])) = (int32_t) p->defaultValue;
 			break;
 		case FLOAT:
 			*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
