@@ -31,8 +31,6 @@ struct ulDatabase_ParamMetadata {
 	float defaultValue;
 };
 
-void ulDatabase_ParamMetadata_getSize(struct ulDatabase_ParamMetadata * self, uint16_t id);
-
 struct ulDatabase {
 	uint8_t *dataArray;
 	struct ulDatabase_ParamMetadata *metadataTable;
