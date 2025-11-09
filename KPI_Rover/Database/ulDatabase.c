@@ -45,7 +45,7 @@ bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t m
 		db.dataArray = (uint8_t *) db_mem;
 	}
 
-	// create mutexes for every parameter
+	// create global database lock (mutex) for the entire database
 	{
 		ulDatabase_mutex_cb = malloc(sizeof(StaticSemaphore_t));
 
