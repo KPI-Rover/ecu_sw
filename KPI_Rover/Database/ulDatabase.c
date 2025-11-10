@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "ulDatabase.h"
 
 #include "FreeRTOS.h"
@@ -83,7 +85,7 @@ bool ulDatabase_setUint8(uint16_t id, uint8_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint8_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 1);
 	DB_FREE();
 
 	return true;
@@ -100,7 +102,7 @@ bool ulDatabase_getUint8(uint16_t id, uint8_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((uint8_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 1);
 	DB_FREE();
 
 	return true;
@@ -117,7 +119,7 @@ bool ulDatabase_setInt8(uint16_t id, int8_t value)
 		return false;
 
 	DB_LOCK();
-	*((int8_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 1);
 	DB_FREE();
 
 	return true;
@@ -134,7 +136,7 @@ bool ulDatabase_getInt8(uint16_t id, int8_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int8_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 1);
 	DB_FREE();
 
 	return true;
@@ -151,7 +153,7 @@ bool ulDatabase_setUint16(uint16_t id, uint16_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint16_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 2);
 	DB_FREE();
 
 	return true;
@@ -168,7 +170,7 @@ bool ulDatabase_getUint16(uint16_t id, uint16_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((uint16_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 2);
 	DB_FREE();
 
 	return true;
@@ -185,7 +187,7 @@ bool ulDatabase_setInt16(uint16_t id, int16_t value)
 		return false;
 
 	DB_LOCK();
-	*((int16_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 2);
 	DB_FREE();
 
 	return true;
@@ -202,7 +204,7 @@ bool ulDatabase_getInt16(uint16_t id, int16_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int16_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 2);
 	DB_FREE();
 
 	return true;
@@ -219,7 +221,7 @@ bool ulDatabase_setUint32(uint16_t id, uint32_t value)
 		return false;
 
 	DB_LOCK();
-	*((uint32_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 4);
 	DB_FREE();
 
 	return true;
@@ -236,7 +238,7 @@ bool ulDatabase_getUint32(uint16_t id, uint32_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((uint32_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 4);
 	DB_FREE();
 
 	return true;
@@ -253,7 +255,7 @@ bool ulDatabase_setInt32(uint16_t id, int32_t value)
 		return false;
 
 	DB_LOCK();
-	*((int32_t *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 4);
 	DB_FREE();
 
 	return true;
@@ -270,7 +272,7 @@ bool ulDatabase_getInt32(uint16_t id, int32_t *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((int32_t *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 4);
 	DB_FREE();
 
 	return true;
@@ -287,7 +289,7 @@ bool ulDatabase_setFloat(uint16_t id, float value)
 		return false;
 
 	DB_LOCK();
-	*((float *) &(db.dataArray[p->offset])) = value;
+	memcpy(&(db.dataArray[p->offset]), &value, 4);
 	DB_FREE();
 
 	return true;
@@ -304,7 +306,7 @@ bool ulDatabase_getFloat(uint16_t id, float *value)
 		return false;
 
 	DB_LOCK();
-	*value = *((float *) &(db.dataArray[p->offset]));
+	memcpy(value, &(db.dataArray[p->offset]), 4);
 	DB_FREE();
 
 	return true;
@@ -321,25 +323,17 @@ bool ulDatabase_reset(uint16_t id)
 
 	switch (p->type) {
 	case UINT8:
-		*((uint8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
-		break;
 	case INT8:
-		*((int8_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 1);
 		break;
 	case UINT16:
-		*((uint16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
-		break;
 	case INT16:
-		*((int16_t *) &(db.dataArray[p->offset])) = p->defaultValue;
+		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 2);
 		break;
 	case UINT32:
-		*((uint32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
-		break;
 	case INT32:
-		*((int32_t *) &(db.dataArray[p->offset])) = p->defaultValue;
-		break;
 	case FLOAT:
-		*((float *) &(db.dataArray[p->offset])) = p->defaultValue;
+		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 4);
 		break;
 	}
 
