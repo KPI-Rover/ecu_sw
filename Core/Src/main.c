@@ -78,6 +78,8 @@ void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
+void LedManager_Task(void *argument);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -158,6 +160,12 @@ int main(void)
 
   ul_ulog_init();
 
+  const osThreadAttr_t ledControlTask_attributes = {
+     .name = "LedControl",
+     .stack_size = 128 * 4,
+	 .priority = (osPriority_t) osPriorityHigh,
+  };
+  (void) osThreadNew(LedManager_Task, NULL, &ledControlTask_attributes);
   
   /* USER CODE END RTOS_THREADS */
 
