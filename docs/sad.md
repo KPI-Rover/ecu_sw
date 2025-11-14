@@ -731,43 +731,80 @@ The Encoders Module reads wheel encoder counts and calculates wheel speed for od
 
 The Encoders Module component consists of two main parts:
 
-1. **drvEncoders**: Low-level encoder driver handling timer/capture hardware and pulse counting.
-2. **ulEncoders**: Utility layer implementing speed calculation, direction detection, and Database updates.
+1. **drvEncoder**: Low-level encoder driver providing an interface to read values of encoder channels using STM32 HAL.
+2. **ulEncoder**: Utility layer that periodically reads encoder values, calculates RPMs for each motor, and saves them to the Database. The period for reading and calculation is determined by the value of `MOTORS_CONTROL_PERIOD_MS` from the Database. Additionally, it provides a function to read the number of encoder ticks since the last read.
 
 ### Design Principles
 
-- High-resolution counting and speed calculation.
+- Direct STM32 HAL integration for encoder hardware access.
+- Periodic sampling and RPM calculation synchronized with the control loop period.
+- Database-driven configuration and state publishing.
+- Efficient tick difference calculation for odometry and diagnostics.
 
 ### Class Diagram
 
 ```plantuml
 @startuml
-' TODO: Add class diagram
+class drvEncoder {
+    +init()
+    +readChannel(channel) : uint32_t
+    ...
+}
+
+class ulEncoder {
+    -drvEncoder encoder
+    -uint32_t lastValues[4]
+    -uint16_t periodMs
+    +init()
+    +run()
+    +getDiff(lastValues: uint32_t*, diff: uint32_t*) : uint8_t
+    ...
+}
+
+ulEncoder *-- drvEncoder : uses
+
 @enduml
 ```
 
 ### API Description
 
-#### drvEncoders
+#### drvEncoder
 
 **Public Methods:**
-- TODO
+- `init()`: Initialize encoder hardware using STM32 HAL.
+- `readChannel(channel)`: Read the current tick count for the specified encoder channel.
 
 **Private Methods:**
-- TODO
+- Hardware-specific configuration and interrupt handling.
 
-#### ulEncoders
+#### ulEncoder
 
 **Public Methods:**
-- TODO
+- `init()`: Initialize the utility, load period from Database, and set up internal state.
+- `run()`: Periodically read encoder values, calculate RPMs for each motor, and update the Database. The period is set by `MOTORS_CONTROL_PERIOD_MS`.
+- `getDiff(lastValues, diff)`: Calculate the number of encoder ticks since the last read for each channel.  
+  - `lastValues` is an array of previous tick counts, which will be updated with the current tick values after calculation.  
+  - `diff` is an output array of tick differences.  
+  - Returns the number of channels processed.  
+  **Note:** This function correctly handles one timer reload (overflow) per channel between reads.
 
 **Private Methods:**
-- TODO
+- Internal tick difference calculation.
+- RPM computation logic.
 
 ### Usage Example
 
 ```c
-// TODO: Add usage example
+// Initialization
+ulEncoder_init();
+
+// Periodic task (called every MOTORS_CONTROL_PERIOD_MS)
+ulEncoder_run();
+
+// Calculate tick differences
+uint32_t lastValues[4];
+uint32_t diff[4];
+uint8_t numChannels = ulEncoder_getDiff(lastValues, diff);
 ```
 
 ## LEDsController
