@@ -19,7 +19,7 @@ static osTimerId_t encoderTimerHandle;
 static void ulEncoder_TimerCallback(void *argument) {
 
 	for (int i = 0; i < MOTORS_COUNT; i++) {
-        uint32_t currentTicks = EncoderDriver_Read(i);
+        uint32_t currentTicks = drvEncoder_Read(i);
         uint32_t lastTicks = lastTicks_RPM[i];
 
         int32_t diff = (int32_t) (currentTicks - lastTicks);
@@ -35,10 +35,10 @@ static void ulEncoder_TimerCallback(void *argument) {
 
 void ulEncoder_Init(void) {
 
-	EncoderDriver_Init();
+	drvEncoder_Init();
 
     for (int i = 0; i < MOTORS_COUNT; i++) {
-        uint32_t initialTicks = EncoderDriver_Read(i);
+        uint32_t initialTicks = drvEncoder_Read(i);
         lastTicks_RPM[i] = initialTicks;
         lastTicks_Ethernet[i] = initialTicks;
     }
@@ -58,7 +58,7 @@ void ulEncoder_GetDiffForEthernet(int32_t *diffOutput) {
 
     for (int i = 0; i < MOTORS_COUNT; i++) {
 
-        uint32_t currentTicks = EncoderDriver_Read(i);
+        uint32_t currentTicks = drvEncoder_Read(i);
         uint32_t lastTicks = lastTicks_Ethernet[i];
 
         int32_t diff = (int32_t)(currentTicks - lastTicks);

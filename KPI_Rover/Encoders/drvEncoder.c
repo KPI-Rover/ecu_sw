@@ -8,7 +8,7 @@ extern TIM_HandleTypeDef htim?;
 extern TIM_HandleTypeDef htim?;
 */
 
-void EncoderDriver_Init(void) {
+void drvEncoder_Init(void) {
     HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
     /* other encoders
     HAL_TIM_Encoder_Start(&htim?, TIM_CHANNEL_ALL);
@@ -17,7 +17,7 @@ void EncoderDriver_Init(void) {
     */
 }
 
-uint32_t EncoderDriver_Read(uint8_t channel) {
+uint32_t drvEncoder_Read(uint8_t channel) {
     switch (channel) {
         case 0: return TIM2->CNT;
         /* other encoders
