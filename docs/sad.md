@@ -334,6 +334,7 @@ Below is a table of Database parameters used by the MotorsController:
 | MOTOR_RL_RPM                | int32  | Measured RPM for rear-left motor            | no         | 0            |
 | MOTOR_RR_RPM                | int32  | Measured RPM for rear-right motor           | no         | 0            |
 | MOTORS_CONTROL_PERIOD_MS    | uint16 | Control loop period in milliseconds         | yes        | 10           |
+| PROTOCOL_VERSION            | uint8  | Protocol version for communication hub      | yes        | 1            |
 
 ## Communication Hub
 
@@ -341,47 +342,137 @@ The Communication Hub manages external communication interfaces, providing a uni
 
 ### Architecture
 
-The Communication Hub component consists of two main parts:
+The Communication Hub consists of the following components:
 
-1. **drvComHub**: Low-level communication driver handling protocol implementation and hardware interfaces.
-2. **ulComHub**: Utility layer integrating the driver with the Database and implementing communication tasks.
+1. **drvUart**: Low-level driver handling UART hardware, DMA, and interrupts. It provides a callback mechanism for received data.
+2. **Transport Interface (ITransport)**: Abstract base class defining the transport API for sending and receiving protocol frames.
+3. **UARTTransport**: Implements ITransport using `drvUart`. Runs in a dedicated FreeRTOS task.
+4. **TCPTransport**: Implements ITransport for TCP socket communication. Runs in a dedicated FreeRTOS task.
+5. **ProtocolHandler**: Processes protocol messages from a request queue, interacts with the Database, and puts responses into an answer queue.
+
+**Flow:**
+- Each transport implementation receives raw protocol frames and puts them into a request queue.
+- The ProtocolHandler fetches requests from the queue, processes them according to the protocol specification, interacts with the Database, and puts responses into an answer queue.
+- Transports send responses from the answer queue back to the client.
 
 ### Design Principles
 
-- Protocol abstraction for UART, CAN, USB, etc.
-- Message routing to/from Database.
-- Error handling and communication health monitoring.
+- **Transport abstraction**: All transport implementations inherit from a common ITransport interface.
+- **Task isolation**: Each transport implementation runs in its own FreeRTOS task to ensure responsiveness and isolation.
+- **Queue-based decoupling**: Message queues decouple transport from protocol logic for concurrency and modularity.
+- **Protocol-driven processing**: ProtocolHandler implements the logic defined in [protocol.md](../../www/docs/platform/ecu/protocol.md).
+- **DMA/IDLE for UART**: `drvUart` uses DMA for efficient data transfer and IDLE interrupt for packet boundary detection.
 
 ### Class Diagram
 
 ```plantuml
 @startuml
-' TODO: Add class diagram
+interface ITransport {
+    +init()
+    +send(data)
+    +receive()
+    +run()
+}
+UARTTransport -up-|> ITransport
+TCPTransport -up-|> ITransport
+
+class drvUart {
+    +init()
+    +send(data)
+    +registerCallback(onReceive)
+    -dmaHandler()
+    -idleHandler()
+}
+
+class UARTTransport {
+    +init()
+    +send(data)
+    +receive()
+    +run()
+    -onUartReceive(data)
+}
+
+class TCPTransport {
+    +init()
+    +send(data)
+    +receive()
+    +run()
+}
+
+class ProtocolHandler {
+    +run()
+    -processRequest(request)
+}
+
+UARTTransport --> drvUart : uses
+UARTTransport --> ProtocolHandler
+TCPTransport --> ProtocolHandler
+ProtocolHandler --> Database : uses
+
 @enduml
 ```
 
 ### API Description
 
-#### drvComHub
+#### drvUart
+- `init()`: Initialize UART hardware, DMA, and interrupts. Sets up the DMA controller for reception and transmission.
+- `send(data)`: Send raw bytes via UART using DMA. Returns success or failure status.
+- `registerCallback(onReceive)`: Register a callback function to be invoked when a complete packet is received. The IDLE line interrupt signals end of packet.
 
-**Public Methods:**
-- TODO
-
-**Private Methods:**
-- TODO
-
-#### ulComHub
-
-**Public Methods:**
-- TODO
-
-**Private Methods:**
-- TODO
-
-### Usage Example
-
+**Callback Signature:**
 ```c
-// TODO: Add usage example
+typedef void (*drvUart_OnReceiveCallback)(const uint8_t* data, uint16_t length);
+```
+
+#### ITransport (abstract)
+- `init()`: Initialize transport.
+- `send(data)`: Send data to client.
+- `receive()`: Receive data from client.
+- `run()`: Main loop for transport.
+
+#### UARTTransport
+- Inherits ITransport.
+- Uses `drvUart` for hardware access.
+- Runs in a dedicated FreeRTOS task.
+- `init()`: Initialize `drvUart` and register the `onUartReceive` callback.
+- `run()`: FreeRTOS task loop. Handles outgoing messages from ProtocolHandler. Incoming messages are delivered via the `drvUart` callback.
+- `onUartReceive(data, length)`: Callback invoked by `drvUart` when data is received. Validates frame format (if UART framing is used) and puts the payload into the request queue.
+
+#### TCPTransport
+- Inherits ITransport.
+- Uses socket for TCP communication.
+- Runs in a dedicated FreeRTOS task.
+- `init()`: Initialize socket and bind to configured port.
+- `run()`: FreeRTOS task loop. Manages socket connection, receiving data, putting into request queue, and sending responses from answer queue.
+
+#### ProtocolHandler
+- `run()`: Main loop. Fetches requests from queue one by one, processes them, and puts answers in answer queue.
+- `processRequest(request)`: Implements protocol logic as per [protocol.md](../../www/docs/platform/ecu/protocol.md). Parses command ID, extracts payload, calls appropriate handler, and builds response.
+
+### Dynamic Behavior
+
+#### Handling `get_api_version` Request
+
+```plantuml
+@startuml
+actor Client
+participant drvUart
+participant UARTTransport
+participant ProtocolHandler
+participant Database
+
+Client -> drvUart: send data via UART
+drvUart -> drvUart: receive via DMA
+drvUart -> drvUart: IDLE interrupt triggers
+drvUart -> UARTTransport: onUartReceive(data, length)
+UARTTransport -> ProtocolHandler: put request in queue
+ProtocolHandler -> ProtocolHandler: fetch request from queue
+ProtocolHandler -> Database: getUint8(PROTOCOL_VERSION, &version)
+ProtocolHandler -> UARTTransport: put response in answer queue
+UARTTransport -> drvUart: send(response)
+drvUart -> drvUart: transmit via DMA
+drvUart -> Client: response received
+@enduml
 ```
 
 ## MotorsController
