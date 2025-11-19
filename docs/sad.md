@@ -447,7 +447,7 @@ typedef void (*drvUart_OnReceiveCallback)(const uint8_t* data, uint16_t length);
 
 #### ProtocolHandler
 - `run()`: Main loop. Fetches requests from queue one by one, processes them, and puts answers in answer queue.
-- `processRequest(request)`: Implements protocol logic as per [protocol.md](../../www/docs/platform/ecu/protocol.md). Parses command ID, extracts payload, calls appropriate handler, and builds response.
+- `processRequest(request)`: Implements protocol logic as per [protocol.md](https://github.com/KPI-Rover/KPI-Rover.github.io/blob/main/docs/platform/ecu/protocol.md). Parses command ID, extracts payload, calls appropriate handler, and builds response.
 
 ### Dynamic Behavior
 
