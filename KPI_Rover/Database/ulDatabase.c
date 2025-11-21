@@ -4,6 +4,8 @@
 
 #include "FreeRTOS.h"
 
+#include "ulog.h"
+
 #define DB_LOCK() osMutexAcquire(ulDatabase_mutex, osWaitForever)
 #define DB_FREE() osMutexRelease(ulDatabase_mutex)
 
@@ -14,6 +16,8 @@ static struct ulDatabase db;
 
 bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t metadataCount)
 {
+	ULOG_DEBUG("Database init start");
+
 	// calculate DB size and assign correct offsets
 	uint16_t db_size = 0;
 
@@ -38,26 +42,37 @@ bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t m
 	}
 
 	// allocate memory for DB
-	{
+	if (db_size) {
+		ULOG_INFO("Allocating %hu for database storage", db_size);
+
 		void *db_mem = malloc(db_size);
 
-		if (db_mem == NULL)
+		if (db_mem == NULL) {
+			ULOG_ERROR("Failed to allocate memory for database storage: allocator returned NULL");
 			return false;
+		}
 
 		db.dataArray = (uint8_t *) db_mem;
+	} else {
+		ULOG_INFO("Not allocating memory for an empty database");
+		db.dataArray = NULL;
 	}
 
 	// create global database lock (mutex) for the entire database
 	{
 		ulDatabase_mutex_cb = malloc(sizeof(StaticSemaphore_t));
 
-		if (ulDatabase_mutex_cb == NULL)
+		if (ulDatabase_mutex_cb == NULL) {
+			ULOG_ERROR("Failed to allocate memory for database mutex: allocator returned NULL");
 			return false;
+		}
 
 		osMutexAttr_t mutex_attrs = {NULL, 0, ulDatabase_mutex_cb, sizeof(StaticSemaphore_t)};
 
-		if (NULL == (ulDatabase_mutex = osMutexNew(&mutex_attrs)))
+		if (NULL == (ulDatabase_mutex = osMutexNew(&mutex_attrs))) {
+			ULOG_ERROR("Failed to initialize mutex: OS error");
 			return false;
+		}
 	}
 
 	// save metadata for allocated db + metadata size
@@ -70,6 +85,8 @@ bool ulDatabase_init(struct ulDatabase_ParamMetadata * metadataTable, uint16_t m
 	// fill db memory with default values
 	for (uint16_t i = 0; i < metadataCount; i++)
 		ulDatabase_reset(i);
+
+	ULOG_DEBUG("Database init finish [success]");
 
 	return true;
 }
