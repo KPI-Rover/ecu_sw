@@ -158,6 +158,8 @@ int main(void)
 
   ul_ulog_init();
 
+  // Initialize KPIRover
+  KPIRover_Init();
   
   /* USER CODE END RTOS_THREADS */
 
