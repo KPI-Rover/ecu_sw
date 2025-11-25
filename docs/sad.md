@@ -13,7 +13,6 @@
 - [ADC Module](#adc-module)
 - [IMU Module](#imu-module)
 - [Compass Module](#compass-module)
-- [GPS Module](#gps-module)
 - [Encoders Module](#encoders-module)
 - [LEDsController](#ledscontroller)
 - [BuzzerController](#buzzercontroller)
@@ -57,7 +56,6 @@ Alternatively, you can use the online PlantUML editor at [https://www.plantuml.c
     component "ADC Module" <<sensor>>
     component "IMU Module" <<sensor>>
     component "Compass Module" <<sensor>>
-    component "GPS Module" <<sensor>>
     component "Encoders Module" <<sensor>>
 
     component "LEDsController" <<control>>
@@ -74,7 +72,6 @@ Alternatively, you can use the online PlantUML editor at [https://www.plantuml.c
     [ADC Module] .down.> [Database] : "use"
     [IMU Module] .down.> [Database] : "use"
     [Compass Module] .down.> [Database] : "use"
-    [GPS Module] .down.> [Database] : "use"
     [Encoders Module] .down.> [Database] : "use"
     [MotorsController] .up.> [Database] : "use"
     [LEDsController] .up.> [Database] : "use"
@@ -88,7 +85,6 @@ Alternatively, you can use the online PlantUML editor at [https://www.plantuml.c
 - **ADC Module**: Samples analog channels (battery, sensors) and writes measured values to the Database.
 - **IMU Module**: Provides accelerometer and gyroscope data.
 - **Compass Module**: Provides heading information and writes orientation data.
-- **GPS Module**: Provide GPS data.
 - **Encoders Module**: Reads wheel encoder counts, calculate speed.
 - **LEDsController**: Controls visual indicators (LEDs).
 - **BuzzerController**: Controls audible alerts.
@@ -335,6 +331,13 @@ Below is a table of Database parameters used by the MotorsController:
 | MOTOR_RR_RPM                | int32  | Measured RPM for rear-right motor           | no         | 0            |
 | MOTORS_CONTROL_PERIOD_MS    | uint16 | Control loop period in milliseconds         | yes        | 10           |
 | PROTOCOL_VERSION            | uint8  | Protocol version for communication hub      | yes        | 1            |
+| ADC_CALIBRATION_START      | uint8  | Calibration trigger (write 0xF1 to start)   | no         | 0            |
+| ADC_CALIBRATION_POINT      | uint8  | Calibration point selection (0=Offset,1=Scale) | no      | 0            |
+| ADC_CALIBRATION_POINT_VALUE| float  | Physical value for calibration point        | no         | 0.0          |
+| ADC_CAL_CH_<n>_OFFSET      | int32  | Per-channel ADC raw offset (Offset)         | yes        | 0            |
+| ADC_CAL_CH_<n>_SCALE       | float  | Per-channel ADC scale factor                | yes        | 1.0          |
+| PARAM_BATTERY_VOLTAGE      | float  | Measured battery voltage (V)                | no         | 0.0          |
+| PARAM_MCU_TEMPERATURE      | float  | MCU temperature (deg C)                     | no         | 0.0          |
 
 ## Communication Hub
 
@@ -625,26 +628,99 @@ end note
 ```
 
 ## ADC Module
+The ADC Module measures analog signals required by the chassis controller and publishes calibrated, engineering-unit values to the Database. It is implemented as two separate components following the project template:
 
-The ADC Module samples analog channels (battery voltage, current sensors, etc.) and provides filtered measurement data to the Database.
+1. `drvAdc` — low-level driver that configures ADC hardware, starts DMA-based conversions and performs sample-level filtering.
+2. `ulAdc`  — utility layer that registers per-channel callbacks, converts filtered ADC values into engineering units, applies calibration, and saves results to the Database.
+
+Supported channels (initial scope):
+- Battery voltage
+- MCU internal temperature sensor
 
 ### Architecture
 
-The ADC Module component consists of two main parts:
+- `drvAdc` configures the ADC peripheral and a DMA transfer for the enabled channels. For every measurement cycle it collects 36 raw samples per enabled channel into a circular buffer and, when the cycle is complete, performs the prescribed sample filtering and reduction (see Filtering). Once a filtered result is available for a channel, `drvAdc` invokes the registered callback for that channel.
+- `ulAdc` registers one callback per channel with `drvAdc`. When notified, `ulAdc` converts the filtered ADC value to the channel's engineering units using hard-coded conversion logic (per-channel) and applies channel-specific calibration (offset/scale). The final value is saved to the Database under the appropriate parameter key.
 
-1. **drvAdc**: Low-level ADC driver handling hardware configuration and raw sample acquisition.
-2. **ulAdc**: Utility layer implementing filtering, calibration, and Database updates.
+This separation keeps `drvAdc` strictly hardware-focused (DMA, interrupts, sample reduction) while `ulAdc` contains project-specific conversion, calibration and Database logic (follows SAD-D-2).
 
 ### Design Principles
 
-- Multi-channel sampling.
-- Signal filtering and calibration.
+- DMA-first acquisition: minimize CPU usage by using DMA to gather samples for all channels.
+- Fixed-size measurement cycle: each channel produces exactly 36 raw samples per cycle.
+- Deterministic filtering: remove measurement outliers by discarding the two smallest and two largest samples, then average the remaining 32 samples to produce a single filtered ADC value per cycle.
+- Callback-driven handoff: `drvAdc` does minimal processing and notifies `ulAdc` via callbacks when a channel measurement is ready.
+- Single-file calibration state: calibration coefficients (offset and scale) are stored in the Database so they persist and are visible to other components.
+- Calibration supports one-point (Offset or Scale) or two-point (Offset+Scale) workflows performed independently per channel.
+
+### Filtering (implementation detail)
+
+For each channel in a measurement cycle:
+1. Collect 36 raw ADC samples using DMA.
+2. Identify and remove the two minimum and two maximum sample values (to suppress spikes and dropouts).
+3. Sum the remaining 32 samples and compute arithmetic average (integer arithmetic recommended).
+4. The resulting averaged raw ADC value is delivered to `ulAdc` via the channel callback.
+
+Notes:
+- Implement filtering using an efficient method (partial selection of 2 min/2 max without full sort) to limit CPU time.
+- Use 32-bit accumulator to avoid overflow when summing 32 samples of 12/16-bit ADC values.
+
+### Calibration (overview)
+
+Calibration is linear and channel-specific. Each channel has two independent calibration coefficients:
+- `Offset` — raw ADC baseline offset for the channel (stored as integer raw ADC units).
+- `Scale`  — multiplicative scale factor that converts (raw - Offset) to physical units (float).
+
+Use `Offset` and `Scale` as the professional names for calibration points. They express intent (baseline offset and multiplicative scale) and map directly to the implementation: the calibrated value is computed as `value = Scale * (raw - Offset)`.
+
+Calibration parameters (recommended Database keys):
+- `ADC_CALIBRATION_START` (trigger): write `0xF1` to start a calibration step. `ulAdc` monitors this parameter.
+- `ADC_CALIBRATION_POINT` (which coefficient): `0` = Offset, `1` = Scale.
+- `ADC_CALIBRATION_POINT_VALUE` (real-world value): the physical value corresponding to the calibration point (volts, degrees Celsius, etc.).
+- Per-channel persistent coefficients saved by `ulAdc`:
+    - `ADC_CAL_CH_<n>_OFFSET` (int32) — baseline raw ADC units for channel `n` (legacy `ADC_CALIBRATION_CH_x_ZEROSHIFT` may be mirrored).
+    - `ADC_CAL_CH_<n>_SCALE`  (float) — scale factor for channel `n` (legacy `ADC_CALIBRATION_CH_x_K` may be mirrored).
+
+Compatibility note: if the existing system uses `ADC_CALIBRATION_CH_x_ZEROSHIFT` and `ADC_CALIBRATION_CH_x_K`, `ulAdc` should write the new recommended keys and may also mirror them to the legacy names for backward compatibility.
+
+Calibration algorithm (per-channel):
+- Offset (point == Offset):
+    - Wait for the next filtered measurement for that channel; read raw value Rb.
+    - Save `ADC_CAL_CH_<n>_OFFSET = Rb`.
+    - Do not modify `SCALE`.
+- Scale (point == Scale):
+    - Wait for next filtered measurement for that channel; read raw value Rs.
+    - If `OFFSET` is available: compute SCALE = (PointValue) / (Rs - OFFSET).
+    - If `OFFSET` is not available: compute SCALE = (PointValue) / Rs.
+    - Save `ADC_CAL_CH_<n>_SCALE = SCALE`.
+
+After calibration step completion `ulAdc` clears `ADC_CALIBRATION_START` (or sets it to a status code) and persists the updated coefficients to the Database.
 
 ### Class Diagram
 
 ```plantuml
 @startuml
-' TODO: Add class diagram
+class drvAdc {
+        +init(enabledChannels: uint32_t)
+        +startMeasurement()
+        +stopMeasurement()
+        +registerCallback(channel: uint8_t, cb: drvAdc_Callback, ctx: void*)
+}
+
+class ulAdc {
+        +init()
+        +registerChannels()
+        +onRawFiltered(channel: uint8_t, rawValue: uint32_t)
+        +applyCalibration(channel: uint8_t, rawValue: uint32_t) : float
+}
+
+interface drvAdc_Callback {
+        +onSampleReady(channel: uint8_t, filteredRaw: uint32_t, ctx: void*)
+}
+
+drvAdc "1" *-- "many" drvAdc_Callback : uses
+ulAdc --> drvAdc : registers callbacks
+ulAdc --> Database : writes calibrated values and calibration coefficients
 @enduml
 ```
 
@@ -652,25 +728,38 @@ The ADC Module component consists of two main parts:
 
 #### drvAdc
 
-**Public Methods:**
-- TODO
+Public methods:
+- `drvAdc_init(enabledChannels_mask)` — initialize ADC peripheral, configure channel sequence and DMA buffer for 36 samples per enabled channel.
+- `drvAdc_startMeasurement()` — starts continuous or periodic measurement cycles. Each cycle collects 36 samples per channel and triggers callbacks when filtered values are ready.
+- `drvAdc_stopMeasurement()` — stops conversions and DMA.
+- `drvAdc_registerCallback(channel, cb, ctx)` — register a per-channel callback. Callback signature:
 
-**Private Methods:**
-- TODO
+```c
+typedef void (*drvAdc_Callback)(uint8_t channel, uint32_t filteredRaw, void* ctx);
+```
+
+Behavioral notes:
+- The driver performs the 36-sample acquisition and filtering (remove two minima and two maxima, average remaining 32 samples) before invoking the callback. The `filteredRaw` value is the averaged ADC units (integer).
+- The driver must guarantee deterministic, thread-safe callback invocation context (e.g., from a deferred task or RTOS thread, not directly in ISR if heavy operations are performed by the callback).
 
 #### ulAdc
 
-**Public Methods:**
-- TODO
+Public methods / responsibilities:
+- `ulAdc_init()` — initialize utility, read calibration coefficients from Database, register callbacks for configured channels with `drvAdc`.
+- `ulAdc_onSampleReady(channel, filteredRaw)` — callback invoked by `drvAdc`. Responsibilities:
+    - Convert `filteredRaw` to the engineering unit for the channel (hard-coded conversion per channel number).
+    - Apply calibration: calibrated_value = SCALE * (raw - OFFSET)  (where OFFSET is `ADC_CAL_CH_<n>_OFFSET`, SCALE is `ADC_CAL_CH_<n>_SCALE`). If coefficients are missing, fall back to safe defaults (OFFSET = 0, SCALE = 1.0).
+    - Save the calibrated value to the Database under the channel-specific parameter (for example: `PARAM_BATTERY_VOLTAGE`, `PARAM_MCU_TEMPERATURE`).
+    - If `ADC_CALIBRATION_START` is active, perform the calibration step as described in Calibration and write resulting coefficients into the Database.
 
-**Private Methods:**
-- TODO
 
-### Usage Example
+Conversion details (hard-coded per channel):
+- Battery voltage: convert ADC raw to volts using reference voltage and resistor divider factor. Example (12-bit ADC):
 
-```c
-// TODO: Add usage example
-```
+    Vbat = (filteredRaw / ADC_MAX) * Vref * divider_factor
+
+    Where `ADC_MAX` and `Vref` are constants chosen for the MCU/board; `divider_factor` is fixed by the hardware (e.g. (R1+R2)/R2).
+- MCU internal temperature sensor: use the MCU datasheet conversion formula (sensor-specific slope/intercept). Implement constants in `ulAdc` and convert raw ADC units to degrees Celsius.
 
 ## IMU Module
 
@@ -766,54 +855,7 @@ The Compass Module component consists of two main parts:
 ```c
 // TODO: Add usage example
 ```
-
-## GPS Module
-
-The GPS Module provides position, velocity, and time information for navigation and localization.
-
-### Architecture
-
-The GPS Module component consists of two main parts:
-
-1. **drvGps**: Low-level GPS driver handling UART communication and protocol parsing.
-2. **ulGps**: Utility layer implementing data validation, conversion, and Database updates.
-
-### Design Principles
-
-- Protocol support and fix quality monitoring.
-
-### Class Diagram
-
-```plantuml
-@startuml
-' TODO: Add class diagram
-@enduml
-```
-
-### API Description
-
-#### drvGps
-
-**Public Methods:**
-- TODO
-
-**Private Methods:**
-- TODO
-
-#### ulGps
-
-**Public Methods:**
-- TODO
-
-**Private Methods:**
-- TODO
-
-### Usage Example
-
-```c
-// TODO: Add usage example
-```
-
+ 
 ## Encoders Module
 
 The Encoders Module reads wheel encoder counts and calculates wheel speed for odometry and motor control.
