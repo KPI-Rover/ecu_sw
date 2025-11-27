@@ -9,6 +9,16 @@
 #define DB_LOCK() osMutexAcquire(ulDatabase_mutex, osWaitForever)
 #define DB_FREE() osMutexRelease(ulDatabase_mutex)
 
+union TypeHolder {
+	uint8_t  u8;
+	int8_t   i8;
+	uint16_t u16;
+	int16_t  i16;
+	uint32_t u32;
+	int32_t  i32;
+	float    f;
+};
+
 static osMutexId_t ulDatabase_mutex;
 StaticSemaphore_t *ulDatabase_mutex_cb;
 
@@ -336,21 +346,55 @@ bool ulDatabase_reset(uint16_t id)
 	if (p == NULL)
 		return false;
 
+	union TypeHolder new_value;
+
 	DB_LOCK();
 
 	switch (p->type) {
 	case UINT8:
+		new_value.u8 = (uint8_t) p->defaultValue;
+		break;
 	case INT8:
-		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 1);
+		new_value.i8 = (int8_t) p->defaultValue;
 		break;
 	case UINT16:
+		new_value.u16 = (uint16_t) p->defaultValue;
+		break;
 	case INT16:
-		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 2);
+		new_value.i16 = (int16_t) p->defaultValue;
 		break;
 	case UINT32:
+		new_value.u32 = (uint32_t) p->defaultValue;
+		break;
 	case INT32:
+		new_value.i32 = (int32_t) p->defaultValue;
+		break;
 	case FLOAT:
-		memcpy(&(db.dataArray[p->offset]), &(p->defaultValue), 4);
+		new_value.f = (float) p->defaultValue;
+		break;
+	}
+
+	switch (p->type) {
+	case UINT8:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.u8), sizeof(new_value.u8));
+		break;
+	case INT8:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.i8), sizeof(new_value.u8));
+		break;
+	case UINT16:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.u16), sizeof(new_value.u16));
+		break;
+	case INT16:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.i16), sizeof(new_value.i16));
+		break;
+	case UINT32:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.u32), sizeof(new_value.u32));
+		break;
+	case INT32:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.i32), sizeof(new_value.i32));
+		break;
+	case FLOAT:
+		memcpy(&(db.dataArray[p->offset]), &(new_value.f), sizeof(new_value.f));
 		break;
 	}
 
