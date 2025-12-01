@@ -1,9 +1,9 @@
-#include "ul_motors_controller.h"
 #include "ulog.h"
 #include "cmsis_os.h"
 #include <math.h>
+#include <Motors/ulMotorsController.h>
 
-extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
 static osTimerId_t motors_timer_handle;
 
 #define MOTORS_CONTROL_PERIOD_MS 20
@@ -14,21 +14,21 @@ MotorsCtrlState_t g_motors_state = MOTORS_STATE_INIT;
 
 static void init_motors_hw_mapping(ulMotorsController_t* ctrl)
 {
-    // Motor 0
-    ctrl->motors[0].IN1_port    = GPIOC;
-    ctrl->motors[0].IN1_pin     = GPIO_PIN_4;
-    ctrl->motors[0].IN2_port    = GPIOC;
-    ctrl->motors[0].IN2_pin     = GPIO_PIN_5;
-    ctrl->motors[0].htim_pwm    = &htim1;
-    ctrl->motors[0].pwm_channel = TIM_CHANNEL_1;
-
     // Motor 1
+    ctrl->motors[0].IN1_port    = GPIOE;
+    ctrl->motors[0].IN1_pin     = GPIO_PIN_2;
+    ctrl->motors[0].IN2_port    = GPIOE;
+    ctrl->motors[0].IN2_pin     = GPIO_PIN_3;
+    ctrl->motors[0].htim_pwm    = &htim2;
+    ctrl->motors[0].pwm_channel = TIM_CHANNEL_3;
+
+    // Motor 2
     ctrl->motors[1].IN1_port    = GPIOE;
-    ctrl->motors[1].IN1_pin     = GPIO_PIN_7;
+    ctrl->motors[1].IN1_pin     = GPIO_PIN_5;
     ctrl->motors[1].IN2_port    = GPIOE;
-    ctrl->motors[1].IN2_pin     = GPIO_PIN_8;
-    ctrl->motors[1].htim_pwm    = &htim1;
-    ctrl->motors[1].pwm_channel = TIM_CHANNEL_2;
+    ctrl->motors[1].IN2_pin     = GPIO_PIN_6;
+    ctrl->motors[1].htim_pwm    = &htim2;
+    ctrl->motors[1].pwm_channel = TIM_CHANNEL_4;
 }
 
 
