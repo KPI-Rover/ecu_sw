@@ -1,10 +1,10 @@
 #ifndef UL_MOTORS_CONTROLLER_H
 #define UL_MOTORS_CONTROLLER_H
 
+#include <Motors/drvMotors.h>
+#include <Motors/ulPID.h>
+#include <Motors/ulRLS.h>
 #include <stdint.h>
-#include "motors_driver.h"
-#include "ul_pid.h"
-#include "ul_rls.h"
 
 #define ULMOTORS_NUM_MOTORS 2
 
