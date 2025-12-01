@@ -379,7 +379,7 @@ bool ulDatabase_reset(uint16_t id)
 		memcpy(&(db.dataArray[p->offset]), &(new_value.u8), sizeof(new_value.u8));
 		break;
 	case INT8:
-		memcpy(&(db.dataArray[p->offset]), &(new_value.i8), sizeof(new_value.u8));
+		memcpy(&(db.dataArray[p->offset]), &(new_value.i8), sizeof(new_value.i8));
 		break;
 	case UINT16:
 		memcpy(&(db.dataArray[p->offset]), &(new_value.u16), sizeof(new_value.u16));
