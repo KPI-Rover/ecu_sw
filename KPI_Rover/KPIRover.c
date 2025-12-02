@@ -10,6 +10,7 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, INT32, false, 0}, // MOTOR_RL_RPM,
 		{0, INT32, false, 0}, // MOTOR_RR_RPM,
 		{0, UINT16, true, 5}, // ENCODER_CONTROL_PERIOD_MS,
+		{0, FLOAT, true, 820.0f} // ENCODER_TICKS_PER_REVOLUTION,
 };
 
 void KPIRover_Init(void) {
