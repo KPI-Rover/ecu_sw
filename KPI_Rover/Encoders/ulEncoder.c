@@ -77,9 +77,16 @@ void ulEncoder_Init(void) {
 
     encoderTimerHandle = osTimerNew(ulEncoder_TimerCallback, osTimerPeriodic, NULL, &encoderTimer_attributes);
 
-    if (encoderTimerHandle != NULL) {
-      osTimerStart(encoderTimerHandle, encoder_period_ms);
+    if (!encoderTimerHandle) {
+    	ULOG_ERROR("Failed to create Encoder timer");
+       	osThreadExit();
     }
+
+    if (osTimerStart(encoderTimerHandle, encoder_period_ms) != osOK) {
+    	ULOG_ERROR("Failed to start Encoder timer");
+    	osThreadExit();
+    }
+
 }
 
 void ulEncoder_GetDiffForEthernet(int32_t *diffOutput) {
