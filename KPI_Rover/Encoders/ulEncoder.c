@@ -1,6 +1,7 @@
 #include "ulEncoder.h"
 #include "drvEncoder.h"
 #include "Database/ulDatabase.h"
+#include "ulog.h"
 
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
@@ -8,12 +9,9 @@
 
 #define MOTORS_COUNT 4
 
-#define TIMER_16_BIT_MAX 0x10000
-#define OVERFLOW_THRESHOLD TIMER_16_BIT_MAX / 2
 
-
-static uint32_t lastTicks_RPM[MOTORS_COUNT];
-static uint32_t lastTicks_Ethernet[MOTORS_COUNT];
+static uint16_t lastTicks_RPM[MOTORS_COUNT];
+static uint16_t lastTicks_ROS[MOTORS_COUNT];
 
 static uint16_t encoder_period_ms = 5;
 static float encoder_ticks_per_rev = 820.0f;
@@ -21,18 +19,8 @@ static float encoder_ticks_per_rev = 820.0f;
 static osTimerId_t encoderTimerHandle;
 
 
-static inline int32_t ulEncoder_CalculateDiff(uint32_t current, uint32_t last) {
-    int32_t diff = (int32_t)(current - last);
-
-    // overflow in 16-bit timer
-    if (diff < -OVERFLOW_THRESHOLD) {
-        diff += TIMER_16_BIT_MAX;
-    }
-    else if (diff > OVERFLOW_THRESHOLD) {
-        diff -= TIMER_16_BIT_MAX;
-    }
-
-    return diff;
+static inline int32_t ulEncoder_CalculateDiff(uint16_t current, uint16_t last) {
+    return (int16_t)(current - last);
 }
 
 static void ulEncoder_TimerCallback(void *argument) {
@@ -68,7 +56,7 @@ void ulEncoder_Init(void) {
     for (int i = 0; i < MOTORS_COUNT; i++) {
         uint32_t initialTicks = drvEncoder_Read(i);
         lastTicks_RPM[i] = initialTicks;
-        lastTicks_Ethernet[i] = initialTicks;
+        lastTicks_ROS[i] = initialTicks;
     }
 
     const osTimerAttr_t encoderTimer_attributes = {
@@ -89,17 +77,17 @@ void ulEncoder_Init(void) {
 
 }
 
-void ulEncoder_GetDiffForEthernet(int32_t *diffOutput) {
+void ulEncoder_GetDiffForROS(int32_t *diffOutput) {
 
     for (int i = 0; i < MOTORS_COUNT; i++) {
 
         uint32_t currentTicks = drvEncoder_Read(i);
-        uint32_t lastTicks = lastTicks_Ethernet[i];
+        uint32_t lastTicks = lastTicks_ROS[i];
 
         int32_t diff = ulEncoder_CalculateDiff(currentTicks, lastTicks);
 
         diffOutput[i] = diff;
-        lastTicks_Ethernet[i] = currentTicks;
+        lastTicks_ROS[i] = currentTicks;
     }
 }
 
