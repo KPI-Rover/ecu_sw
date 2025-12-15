@@ -2,6 +2,7 @@
 #include "cmsis_os.h"
 #include <math.h>
 #include <Motors/ulMotorsController.h>
+#include "Motors/PCA9685.h"
 
 extern TIM_HandleTypeDef htim2;
 static osTimerId_t motors_timer_handle;
@@ -18,101 +19,95 @@ static void init_motors_hw_mapping(ulMotorsController_t* ctrl)
     ctrl->motors[0].IN1_port    = GPIOE;
     ctrl->motors[0].IN1_pin     = GPIO_PIN_2;
     ctrl->motors[0].IN2_port    = GPIOE;
-    ctrl->motors[0].IN2_pin     = GPIO_PIN_3;
-    ctrl->motors[0].htim_pwm    = &htim2;
-    ctrl->motors[0].pwm_channel = TIM_CHANNEL_3;
+    ctrl->motors[0].IN2_pin     = GPIO_PIN_4;
+    ctrl->motors[0].pwm_src     = PWM_SRC_PCA9685;
+    ctrl->motors[0].pwm.pca.channel = 0;
 
     // Motor 2
     ctrl->motors[1].IN1_port    = GPIOE;
     ctrl->motors[1].IN1_pin     = GPIO_PIN_5;
     ctrl->motors[1].IN2_port    = GPIOE;
     ctrl->motors[1].IN2_pin     = GPIO_PIN_6;
-    ctrl->motors[1].htim_pwm    = &htim2;
-    ctrl->motors[1].pwm_channel = TIM_CHANNEL_4;
+    ctrl->motors[1].pwm_src     = PWM_SRC_PCA9685;
+    ctrl->motors[1].pwm.pca.channel = 1;
+
 }
 
 
 void ulMotorsController_Init(ulMotorsController_t* ctrl)
 {
-    ULOG_INFO("ENTER ulMotorsController_Init");
+    ULOG_INFO("MotorsController init");
 
     init_motors_hw_mapping(ctrl);
 
     for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
 
-        float kp = 5.0f, ki = 0.015f, kd = 0.0f;
-        ulPID_Init(&ctrl->pids[i], kp, ki, kd);
-
+        ulPID_Init(&ctrl->pids[i], 5.0f, 0.015f, 0.0f);
         ulRLS_Init(&ctrl->rls[i]);
 
-        ctrl->last_pwm[i]       = 0.0f;
-        ctrl->adapt_counter[i]  = 0;
-        ctrl->pwm_max[i]        = 0.0f;
+        ctrl->last_pwm[i]      = 0.0f;
+        ctrl->adapt_counter[i] = 0;
 
-        ctrl->setpoint_rpm[i]   = 0.0f;
-        ctrl->measured_rpm[i]   = 0.0f;
-        ctrl->scale_filtered[i] = 1.0f;
+        ctrl->setpoint_rpm[i]  = 0.0f;
+        ctrl->measured_rpm[i]  = 0.0f;
 
+        ulPID_SetOutputLimits(&ctrl->pids[i], 0.0f, 1.0f);
 
-        uint32_t arr = __HAL_TIM_GET_AUTORELOAD(ctrl->motors[i].htim_pwm);
-        ulPID_SetOutputLimits(&ctrl->pids[i], 0.0f, (float)arr);
-        ctrl->pwm_max[i] = (float)arr;
+        if (ctrl->motors[i].pwm_src == PWM_SRC_TIM) {
+            ctrl->pwm_max[i] =
+                (float)__HAL_TIM_GET_AUTORELOAD(
+                    ctrl->motors[i].pwm.tim.htim);
+        }
+        else {
+            ctrl->pwm_max[i] = 4095.0f;
+        }
 
-        ULOG_INFO("Motor %d init: PID(Kp=%.3f Ki=%.3f Kd=%.3f), ARR=%lu, pwm_ch=%lu",
-                  i, kp, ki, kd, arr, ctrl->motors[i].pwm_channel);
+        ULOG_INFO("Motor[%d] pwm_max=%.0f", i, ctrl->pwm_max[i]);
     }
-    //g_motors_state = MOTORS_STATE_IDLE;
-
 }
+
 
 
 void ulMotorsController_Run(ulMotorsController_t* ctrl)
 {
     for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
 
-        float setpoint = ctrl->setpoint_rpm[i];
-        float rpm      = ctrl->measured_rpm[i];
+        float sp  = ctrl->setpoint_rpm[i];
+        float rpm = ctrl->measured_rpm[i];
 
-        bool forward = (setpoint >= 0.0f);
+        bool forward = (sp >= 0.0f);
         DriverMotor_setDirection(&ctrl->motors[i], forward);
 
-        float pwm = ulPID_Compute(&ctrl->pids[i], setpoint, rpm);
+        float pwm_norm = ulPID_Compute(&ctrl->pids[i],
+                                       fabsf(sp),
+                                       fabsf(rpm));
 
-
-        if (pwm < 0.0f) pwm = 0.0f;
-        if (pwm > ctrl->pwm_max[i]) pwm = ctrl->pwm_max[i];
+        if (pwm_norm < 0.0f) pwm_norm = 0.0f;
+        if (pwm_norm > 1.0f) pwm_norm = 1.0f;
 
         ulRLS_Update(&ctrl->rls[i], rpm, ctrl->last_pwm[i]);
 
         if (++ctrl->adapt_counter[i] >= 100) {
             ctrl->adapt_counter[i] = 0;
 
-            float setpoint = ctrl->setpoint_rpm[i];
-
-            if (fabsf(setpoint) > 300.0f && fabsf(rpm) > 100.0f) {
-
+            if (fabsf(sp) > 300.0f && fabsf(rpm) > 100.0f) {
                 ulPID_AutoTune_FromRLS(&ctrl->pids[i],
                                        &ctrl->rls[i],
                                        MOTORS_CONTROL_PERIOD_MS / 1000.0f);
-
-                ULOG_INFO("Motor[%d] autotune: Kp=%.3f Ki=%.3f a=%.3f b=%.3f",
-                          i,
-                          ctrl->pids[i].kp,
-                          ctrl->pids[i].ki,
-                          ctrl->rls[i].theta[0],
-                          ctrl->rls[i].theta[1]);
             }
         }
 
-        DriverMotor_setPwm(&ctrl->motors[i], (uint16_t)pwm);
-        ctrl->last_pwm[i] = pwm;
+        uint32_t pwm_hw =
+            (uint32_t)(pwm_norm * ctrl->pwm_max[i]);
 
-        ULOG_DEBUG("MOTOR[%d] sp=%d rpm=%d pwm=%d dir=%s",
-                   i, (int)setpoint, (int)rpm, (int)pwm,
-                   forward ? "FWD" : "BWD");
+        DriverMotor_setPwm(&ctrl->motors[i], pwm_hw);
+
+        ctrl->last_pwm[i] = pwm_norm;
+
+        ULOG_DEBUG("M%d sp=%.0f rpm=%.0f pwm=%lu",
+                   i, sp, rpm, pwm_hw);
     }
 }
-
 
 static void MotorsTimerCallback(void *argument)
 {
@@ -192,6 +187,8 @@ void ulMotorsController_Task(void* argument)
 
     ulMotorsController_Init(&g_motors_ctrl);
 
+    PCA9685_Init();
+
     const osTimerAttr_t timer_attrs = {
    	   .name = "Motors_Timer"
    	};
@@ -215,9 +212,8 @@ void ulMotorsController_Task(void* argument)
 
    			g_motors_ctrl.setpoint_rpm[0] = 1200.0f;
    			g_motors_ctrl.setpoint_rpm[1] = 1200.0f;
-   	        g_motors_ctrl.measured_rpm[0] = 1150.0f;
-   	        g_motors_ctrl.measured_rpm[1] = 1150.0f;
-
+   	        g_motors_ctrl.measured_rpm[0] = 1100.0f;
+   	        g_motors_ctrl.measured_rpm[1] = 1200.0f;
 
 
    	    osDelay(10);
