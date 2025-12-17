@@ -1,4 +1,5 @@
 #include <Motors/drvMotors.h>
+#include <Motors/PCA9685.h>
 #include "ulog.h"
 
 void DriverMotor_Init(drvMotor_t* motor)
@@ -13,9 +14,6 @@ void DriverMotor_Init(drvMotor_t* motor)
 
     motor->enabled = false;
     DriverMotor_setDirection(motor, true);
-
-    ULOG_INFO("drvMotor_init: src=%s",
-              motor->pwm_src == PWM_SRC_TIM ? "TIM" : "PCA9685");
 }
 
 void DriverMotor_Enable(drvMotor_t* motor)
@@ -33,8 +31,6 @@ void DriverMotor_Disable(drvMotor_t* motor)
 void DriverMotor_setDirection(drvMotor_t* motor, bool forward){
     HAL_GPIO_WritePin(motor->IN1_port, motor->IN1_pin, forward ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(motor->IN2_port, motor->IN2_pin, forward ? GPIO_PIN_RESET : GPIO_PIN_SET);
-
-    ULOG_DEBUG("Motor dir=%s", forward ? "FWD" : "BWD");
 }
 
 void DriverMotor_setPwm(drvMotor_t* motor, uint16_t pwm)

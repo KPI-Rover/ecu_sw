@@ -3,19 +3,70 @@
 #include <math.h>
 #include <Motors/ulMotorsController.h>
 #include "Motors/PCA9685.h"
+#include <Database/ulDatabase.h>
+#include <stdio.h>
+#include <string.h>
+#include "usbd_cdc_if.h"
 
-extern TIM_HandleTypeDef htim2;
 static osTimerId_t motors_timer_handle;
 
 #define MOTORS_CONTROL_PERIOD_MS 20
 
+const float dt_sec = MOTORS_CONTROL_PERIOD_MS / 1000.0f;
+
 ulMotorsController_t g_motors_ctrl;
 MotorsCtrlState_t g_motors_state = MOTORS_STATE_INIT;
+
+static const uint16_t key_rpm[ULMOTORS_NUM_MOTORS] = {
+    MOTOR_FL_RPM,
+    MOTOR_FR_RPM,
+    MOTOR_RL_RPM,
+    MOTOR_RR_RPM
+};
+
+static const uint16_t key_kp[ULMOTORS_NUM_MOTORS] = {
+	MOTOR_FL_KP,
+	MOTOR_FR_KP,
+	MOTOR_RL_KP,
+	MOTOR_RR_KP
+};
+
+static const uint16_t key_ki[ULMOTORS_NUM_MOTORS] = {
+	MOTOR_FL_KI,
+	MOTOR_FR_KI,
+	MOTOR_RL_KI,
+	MOTOR_RR_KI
+};
+
+static const uint16_t key_kd[ULMOTORS_NUM_MOTORS] = {
+	MOTOR_FL_KD,
+	MOTOR_FR_KD,
+	MOTOR_RL_KD,
+	MOTOR_RR_KD
+};
+
+static const uint16_t key_setpoint[ULMOTORS_NUM_MOTORS] = {
+	MOTOR_FL_SETPOINT,
+	MOTOR_FR_SETPOINT,
+	MOTOR_RL_SETPOINT,
+	MOTOR_RR_SETPOINT
+};
+
+static void ulMotorsController_UpdateFeedback(ulMotorsController_t* ctrl)
+{
+    for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
+        int32_t rpm_db = 0;
+
+        if (ulDatabase_getInt32(key_rpm[i], &rpm_db)) {
+            ctrl->measured_rpm[i] = (float)rpm_db;
+        }
+    }
+}
 
 
 static void init_motors_hw_mapping(ulMotorsController_t* ctrl)
 {
-    // Motor 1
+    // MOTOR_1_FL
     ctrl->motors[0].IN1_port    = GPIOE;
     ctrl->motors[0].IN1_pin     = GPIO_PIN_2;
     ctrl->motors[0].IN2_port    = GPIOE;
@@ -23,13 +74,29 @@ static void init_motors_hw_mapping(ulMotorsController_t* ctrl)
     ctrl->motors[0].pwm_src     = PWM_SRC_PCA9685;
     ctrl->motors[0].pwm.pca.channel = 0;
 
-    // Motor 2
+    // MOTOR_2_FR
     ctrl->motors[1].IN1_port    = GPIOE;
     ctrl->motors[1].IN1_pin     = GPIO_PIN_5;
     ctrl->motors[1].IN2_port    = GPIOE;
     ctrl->motors[1].IN2_pin     = GPIO_PIN_6;
     ctrl->motors[1].pwm_src     = PWM_SRC_PCA9685;
     ctrl->motors[1].pwm.pca.channel = 1;
+
+    // MOTOR_3_RL
+	ctrl->motors[2].IN1_port    = GPIOD;
+	ctrl->motors[2].IN1_pin     = GPIO_PIN_0;
+	ctrl->motors[2].IN2_port    = GPIOD;
+	ctrl->motors[2].IN2_pin     = GPIO_PIN_1;
+	ctrl->motors[2].pwm_src     = PWM_SRC_PCA9685;
+	ctrl->motors[2].pwm.pca.channel = 2;
+
+	// MOTOR_4_RR
+	ctrl->motors[3].IN1_port    = GPIOD;
+	ctrl->motors[3].IN1_pin     = GPIO_PIN_2;
+	ctrl->motors[3].IN2_port    = GPIOD;
+	ctrl->motors[3].IN2_pin     = GPIO_PIN_3;
+	ctrl->motors[3].pwm_src     = PWM_SRC_PCA9685;
+	ctrl->motors[3].pwm.pca.channel = 3;
 
 }
 
@@ -42,16 +109,40 @@ void ulMotorsController_Init(ulMotorsController_t* ctrl)
 
     for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
 
-        ulPID_Init(&ctrl->pids[i], 5.0f, 0.015f, 0.0f);
-        ulRLS_Init(&ctrl->rls[i]);
+		float kp = 0.0f;
+		float ki = 0.0f;
+		float kd = 0.0f;
+
+		if (!ulDatabase_getFloat(key_kp[i], &kp)) {
+			ULOG_ERROR("Failed to load Kp for motor %d! Using default.", i);
+			kp = 0.046f;
+		}
+
+		if (!ulDatabase_getFloat(key_ki[i], &ki)) {
+			ULOG_ERROR("Failed to load Ki for motor %d!", i);
+			ki = 0.013f;
+		}
+
+		if (!ulDatabase_getFloat(key_kd[i], &kd)) {
+			 kd = 0.0001f;
+		}
+
+		ulPID_Init(&ctrl->pids[i], kp, ki, kd);
+
+		ctrl->pids[i].deadzone = 0.02f;
+		ctrl->pids[i].slew_rate = 25.0f;
+		ctrl->pids[i].d_alpha = 0.2f;
+		ctrl->pids[i].sp_alpha = 0.1f;
+
+		ulGD_Init(&ctrl->gd[i]);
+
+        ulPID_SetOutputLimits(&ctrl->pids[i], 0.0f, 1.0f);
+        ulPID_SetIntegralLimits(&ctrl->pids[i], -50.0f, 50.0f);
 
         ctrl->last_pwm[i]      = 0.0f;
-        ctrl->adapt_counter[i] = 0;
-
         ctrl->setpoint_rpm[i]  = 0.0f;
         ctrl->measured_rpm[i]  = 0.0f;
 
-        ulPID_SetOutputLimits(&ctrl->pids[i], 0.0f, 1.0f);
 
         if (ctrl->motors[i].pwm_src == PWM_SRC_TIM) {
             ctrl->pwm_max[i] =
@@ -67,47 +158,91 @@ void ulMotorsController_Init(ulMotorsController_t* ctrl)
 }
 
 
+static void ulMotorsController_UpdateFromDB(ulMotorsController_t* ctrl)
+{
+    for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
+        int32_t sp_db = 0;
+
+        if (ulDatabase_getInt32(key_setpoint[i], &sp_db)) {
+            ctrl->setpoint_rpm[i] = (float)sp_db;
+        }
+    }
+}
+
 
 void ulMotorsController_Run(ulMotorsController_t* ctrl)
 {
+    static char teleplot_buf[512];
+    teleplot_buf[0] = '\0';
+    const float MAX_RPM_CONST = 250.0f;
+
     for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
+
+    	if (isnan(ctrl->pids[i].kp) || ctrl->pids[i].kp < 0.001f) ctrl->pids[i].kp = 0.046f;
+    	if (isnan(ctrl->pids[i].ki) || ctrl->pids[i].ki < 0.0f)   ctrl->pids[i].ki = 0.013f;
 
         float sp  = ctrl->setpoint_rpm[i];
         float rpm = ctrl->measured_rpm[i];
 
+        if (isnan(rpm)) rpm = 0.0f;
+
         bool forward = (sp >= 0.0f);
         DriverMotor_setDirection(&ctrl->motors[i], forward);
 
-        float pwm_norm = ulPID_Compute(&ctrl->pids[i],
-                                       fabsf(sp),
-                                       fabsf(rpm));
+        float pwm_norm = ulPID_Compute(&ctrl->pids[i], fabsf(sp), fabsf(rpm), dt_sec);
+
+        if (isnan(pwm_norm)) {
+            pwm_norm = 0.0f;
+        }
 
         if (pwm_norm < 0.0f) pwm_norm = 0.0f;
         if (pwm_norm > 1.0f) pwm_norm = 1.0f;
 
-        ulRLS_Update(&ctrl->rls[i], rpm, ctrl->last_pwm[i]);
+        float max_val = ctrl->pwm_max[i];
+        if (max_val < 1.0f) max_val = 4095.0f;
 
-        if (++ctrl->adapt_counter[i] >= 100) {
-            ctrl->adapt_counter[i] = 0;
+        uint32_t pwm_hw = (uint32_t)(pwm_norm * max_val);
 
-            if (fabsf(sp) > 300.0f && fabsf(rpm) > 100.0f) {
-                ulPID_AutoTune_FromRLS(&ctrl->pids[i],
-                                       &ctrl->rls[i],
-                                       MOTORS_CONTROL_PERIOD_MS / 1000.0f);
-            }
-        }
-
-        uint32_t pwm_hw =
-            (uint32_t)(pwm_norm * ctrl->pwm_max[i]);
+        if (pwm_hw > (uint32_t)max_val) pwm_hw = (uint32_t)max_val;
 
         DriverMotor_setPwm(&ctrl->motors[i], pwm_hw);
-
         ctrl->last_pwm[i] = pwm_norm;
 
-        ULOG_DEBUG("M%d sp=%.0f rpm=%.0f pwm=%lu",
-                   i, sp, rpm, pwm_hw);
+
+//             ADAPTIVE PI (GRADIENT DESCENT)
+
+        float error = sp - rpm;
+        float error_norm = error / MAX_RPM_CONST;
+
+        ulGD_Update(
+            &ctrl->gd[i],
+            error_norm,
+            ctrl->pids[i].integral,
+            pwm_norm,
+            &ctrl->pids[i].kp,
+            &ctrl->pids[i].ki
+        );
+
+
+//             TELEPLOT
+        char tmp[64];
+		snprintf(tmp, sizeof(tmp), ">M%d_SP:%d\n>M%d_RPM:%d\n>M%d_PWM:%lu\n>M%d_P:%.4f\n>M%d_I:%.4f\n",
+				 i, (int)sp,
+				 i, (int)rpm,
+				 i, pwm_hw,
+				 i, ctrl->pids[i].kp,
+				 i, ctrl->pids[i].ki);
+
+        if (strlen(teleplot_buf) + strlen(tmp) < sizeof(teleplot_buf) - 1) {
+             strcat(teleplot_buf, tmp);
+        }
+    }
+
+    if (strlen(teleplot_buf) > 0) {
+        CDC_Transmit_FS((uint8_t*)teleplot_buf, strlen(teleplot_buf));
     }
 }
+
 
 static void MotorsTimerCallback(void *argument)
 {
@@ -141,6 +276,7 @@ static void MotorsTimerCallback(void *argument)
 
                 for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
                     DriverMotor_Enable(&g_motors_ctrl.motors[i]);
+                    ulPID_Reset(&g_motors_ctrl.pids[i]);
                 }
 
                 g_motors_state = MOTORS_STATE_RUN;
@@ -150,6 +286,7 @@ static void MotorsTimerCallback(void *argument)
 
         case MOTORS_STATE_RUN:
         {
+        	ulMotorsController_UpdateFeedback(&g_motors_ctrl);
             ulMotorsController_Run(&g_motors_ctrl);
 
             bool all_zero = true;
@@ -207,14 +344,9 @@ void ulMotorsController_Task(void* argument)
    	}
 
 
-
    	for (;;) {
 
-   			g_motors_ctrl.setpoint_rpm[0] = 1200.0f;
-   			g_motors_ctrl.setpoint_rpm[1] = 1200.0f;
-   	        g_motors_ctrl.measured_rpm[0] = 1100.0f;
-   	        g_motors_ctrl.measured_rpm[1] = 1200.0f;
-
+   		ulMotorsController_UpdateFromDB(&g_motors_ctrl);
 
    	    osDelay(10);
    	}

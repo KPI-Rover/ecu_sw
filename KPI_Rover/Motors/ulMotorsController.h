@@ -3,15 +3,15 @@
 
 #include <Motors/drvMotors.h>
 #include <Motors/ulPID.h>
-#include <Motors/ulRLS.h>
+#include <Motors/ulGD.h>
 #include <stdint.h>
 
-#define ULMOTORS_NUM_MOTORS 2
+#define ULMOTORS_NUM_MOTORS 4
 
 typedef struct {
     drvMotor_t motors[ULMOTORS_NUM_MOTORS];
     ulPID_t    pids[ULMOTORS_NUM_MOTORS];
-    ulRLS_t    rls[ULMOTORS_NUM_MOTORS];
+    ulGD_t gd[ULMOTORS_NUM_MOTORS];
 
     float      last_pwm[ULMOTORS_NUM_MOTORS];
     uint16_t   adapt_counter[ULMOTORS_NUM_MOTORS];

@@ -13,7 +13,7 @@
 static uint16_t lastTicks_RPM[MOTORS_COUNT];
 static uint16_t lastTicks_ROS[MOTORS_COUNT];
 
-static uint16_t encoder_period_ms = 5;
+static uint16_t encoder_period_ms = 20;
 static float encoder_ticks_per_rev = 820.0f;
 
 static osTimerId_t encoderTimerHandle;
@@ -46,7 +46,7 @@ void ulEncoder_Init(void) {
 	drvEncoder_Init();
 
 	if (!ulDatabase_getUint16(ENCODER_CONTROL_PERIOD_MS, &encoder_period_ms) || encoder_period_ms == 0) {
-		encoder_period_ms = 5;
+		encoder_period_ms = 20;
 	}
 
 	if (!ulDatabase_getFloat(ENCODER_TICKS_PER_REVOLUTION, &encoder_ticks_per_rev) || encoder_ticks_per_rev < 1.0f) {

@@ -41,7 +41,8 @@ void ulPID_Init(ulPID_t* pid, float kp, float ki, float kd);
 void ulPID_Reset(ulPID_t* pid);
 void ulPID_SetParams(ulPID_t* pid, float kp, float ki, float kd);
 void ulPID_SetOutputLimits(ulPID_t* pid, float out_min, float out_max);
-float ulPID_Compute(ulPID_t* pid, float setpoint, float measured);
+void ulPID_SetIntegralLimits(ulPID_t* pid, float int_min, float int_max);
+float ulPID_Compute(ulPID_t* pid, float setpoint, float measured, float dt);
 void ulPID_AutoTune_FromRLS(ulPID_t* pid, const ulRLS_t* rls, float Ts);
 void ulPID_ResetI(ulPID_t* pid);
 #endif // UL_PID_H
