@@ -2,11 +2,19 @@
 #include <math.h>
 #include <stdbool.h>
 
+/**
+ * @file ulGD.c
+ * @brief Online Gradient Descent (GD) Auto-tuner for PID Controllers.
+ *
+ * This module implements an adaptive learning algorithm based on the MIT Rule / Gradient Descent.
+ * It automatically adjusts PID gains (Kp, Ki) in real-time to minimize error.
+ */
+
 void ulGD_Init(ulGD_t* gd)
 {
     /* Tuning Speed */
-    gd->alpha_p = 0.005f;   // Kp learning rate
-    gd->alpha_i = 0.0005f;  // Ki learning rate
+    gd->alpha_p = 0.001f;   // Kp learning rate
+    gd->alpha_i = 0.0001f;  // Ki learning rate
 
     /* Safety Limits */
     gd->kp_min = 0.040f;

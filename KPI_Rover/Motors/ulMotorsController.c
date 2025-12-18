@@ -10,7 +10,7 @@
 
 static osTimerId_t motors_timer_handle;
 
-#define MOTORS_CONTROL_PERIOD_MS 20
+#define MOTORS_CONTROL_PERIOD_MS 5
 
 const float dt_sec = MOTORS_CONTROL_PERIOD_MS / 1000.0f;
 
@@ -129,10 +129,9 @@ void ulMotorsController_Init(ulMotorsController_t* ctrl)
 
 		ulPID_Init(&ctrl->pids[i], kp, ki, kd);
 
-		ctrl->pids[i].deadzone = 0.02f;
+		ctrl->pids[i].deadzone = 0.05f;
 		ctrl->pids[i].slew_rate = 25.0f;
-		ctrl->pids[i].d_alpha = 0.2f;
-		ctrl->pids[i].sp_alpha = 0.1f;
+		ctrl->pids[i].d_alpha = 0.05f;
 
 		ulGD_Init(&ctrl->gd[i]);
 
@@ -348,6 +347,6 @@ void ulMotorsController_Task(void* argument)
 
    		ulMotorsController_UpdateFromDB(&g_motors_ctrl);
 
-   	    osDelay(10);
+   	    osDelay(20);
    	}
 }
