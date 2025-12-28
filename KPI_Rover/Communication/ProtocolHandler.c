@@ -1,16 +1,24 @@
 #include "ProtocolHandler.h"
 #include "cmsis_os.h"
 #include "UARTTransport.h"
-
-//osMessageQueueId_t messageQueue;
+#include "messageQueueId.h"
+#include <stdlib.h>
 
 void ProtocolHandler_run() {
-	uint8_t msg_ptr;
-	osMessageQueueGet(messageQueue, &msg_ptr, NULL, 0);
-	ProtocolHandler_processRequest(&msg_ptr);
+	uint8_t *msg_ptr = malloc(10);
+	uint8_t *answer_ptr = malloc(10);
+
+	osStatus_t status;
+	while (true) {
+		status = osMessageQueueGet(requestQueue, msg_ptr, NULL, 0);
+		if (status == osOK) {
+			ProtocolHandler_processRequest(msg_ptr, answer_ptr);
+			osMessageQueuePut(answerQueue, answer_ptr, 0, 0);
+		}
+	}
 }
 
-void ProtocolHandler_processRequest(uint8_t *request){
+void ProtocolHandler_processRequest(uint8_t *request, uint8_t *response){
 	enum COMMAND_ID command_id = request[0];
 	uint8_t *payload = request + 1;
 	(void) payload;
@@ -31,5 +39,7 @@ void ProtocolHandler_processRequest(uint8_t *request){
 		default:
 			break;
 	}
+
+	*response = 0;
 }
 

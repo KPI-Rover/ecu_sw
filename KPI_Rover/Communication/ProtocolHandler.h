@@ -4,6 +4,6 @@
 #include "stdint.h"
 
 void ProtocolHandler_run();
-void ProtocolHandler_processRequest(uint8_t *request);
+void ProtocolHandler_processRequest(uint8_t *request, uint8_t *response);
 
 #endif /* COMMUNICATION_PROTOCOLHANDLER_H_ */

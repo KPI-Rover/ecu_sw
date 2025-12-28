@@ -16,9 +16,9 @@ enum COMMAND_ID {
 
 bool UARTTransport_init(void);
 void UARTTransport_send(uint8_t *data, uint16_t length);
-void UARTTransport_receive(void);
-void UARTTransport_run(void);
+//void UARTTransport_receive(void);
+void UARTTransport_run(void *arg);
 
-void onUartReceive(const unsigned char *, short unsigned int);
+void UARTTransport_onUartReceive(const unsigned char *, short unsigned int);
 
 #endif /* COMMUNICATION_UARTTRANSPORT_H_ */
