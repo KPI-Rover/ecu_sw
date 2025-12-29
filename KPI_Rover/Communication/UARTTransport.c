@@ -3,6 +3,7 @@
 #include "cmsis_os.h"
 #include "messageQueueId.h"
 #include <stdlib.h>
+#include "crc16.h"
 
 bool UARTTransport_init(void) {
 	if (!drvUart_init()) {
@@ -50,9 +51,11 @@ void UARTTransport_run(void *arg) {
 
 void UARTTransport_onUartReceive(const unsigned char *msg_ptr, short unsigned int length) {
 	uint8_t frame_length = msg_ptr[0];
-	uint16_t crc16 = msg_ptr[frame_length - 1];
-	(void) crc16;
-//	if crc16 is broken, return or do something
+
+	//	if crc16 is broken, return or do something
+	if (crc16(msg_ptr, length)) {
+		return;
+	}
 
 	osMessageQueuePut(requestQueue, msg_ptr + 1, 0, 0);
 }
