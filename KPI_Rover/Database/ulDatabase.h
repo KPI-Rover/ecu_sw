@@ -56,5 +56,7 @@ bool ulDatabase_getInt32(uint16_t id, int32_t *value);
 bool ulDatabase_setFloat(uint16_t id, float value);
 bool ulDatabase_getFloat(uint16_t id, float *value);
 bool ulDatabase_reset(uint16_t id);
+uint8_t *ulDatabase_freeze(void);
+void ulDatabase_unfreeze(void);
 struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id);
 bool ulDatabase_validateId(uint16_t id);
