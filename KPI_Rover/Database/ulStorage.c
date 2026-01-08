@@ -5,8 +5,10 @@
 
 #include "ulog.h"
 
-#define PAGE_START 0x10000000	// CCM RAM
-#define PAGE_SIZE 0x4000	// 16KiB to emulate flash sector (CCM RAM is 64KiB)
+extern char _sccmram[]; // value exported by linker script
+
+#define PAGE_START _sccmram	// CCM RAM (to protect actual flash memory)
+#define PAGE_SIZE 0x4000	// model 16KiB FLASH memory
 #define MARKER_SAVE_BEGIN 0xAA
 
 static uint32_t persistent_db_field_size;
