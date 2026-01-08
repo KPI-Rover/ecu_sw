@@ -410,11 +410,9 @@ uint8_t *ulDatabase_freeze(void)
 	return db.dataArray;
 }
 
-bool ulDatabase_unfreeze(void)
+void ulDatabase_unfreeze(void)
 {
 	DB_FREE();
-
-	return true;
 }
 
 struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)

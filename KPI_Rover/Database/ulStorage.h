@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+bool ulStorage_init(void);
 bool ulStorage_load(void);
 bool ulStorage_save(void);
 bool ulStorage_erase(void);

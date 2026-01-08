@@ -12,7 +12,7 @@
 static uint32_t persistent_db_field_size;
 
 
-// debug start
+// flash emulation section start
 static bool flash_unlocked;
 
 static void HAL_FLASH_Unlock(void)
@@ -24,8 +24,6 @@ static void HAL_FLASH_Lock(void)
 {
 	flash_unlocked = 0;
 }
-// debug end
-
 
 enum Size {
 	FLASH_TYPEPROGRAM_BYTE
@@ -58,6 +56,7 @@ static void HAL_FLASH_Program(enum Size s, const void * const addr, const uint64
 
 	*(uint8_t *) addr = (uint8_t) value;
 }
+// flash emulation section finish
 
 static uint32_t crc32(const uint8_t * const data, const uint32_t data_size, const uint32_t remainder)
 {
@@ -223,7 +222,7 @@ static uint8_t *ulStorage_find_first_free_block(void)
 
 	for (
 		seek_head = (uint8_t *) PAGE_START + 4;
-		(seek_head < (uint8_t *) (PAGE_START + PAGE_SIZE)) && (*seek_head == MARKER_SAVE_BEGIN);
+		(seek_head < (uint8_t *) (PAGE_START + PAGE_SIZE)) && (*seek_head != 0xFF);
 		seek_head += 1 + persistent_db_field_size + 4);
 
 	return seek_head;
@@ -306,11 +305,10 @@ static bool ulStorage_find_last_save(uint8_t **buffer)
 	uint32_t save_checksum = 0xFFFFFFFF;
 
 	while ((seek_head > (uint8_t *) PAGE_START + 4) && save_checksum) {
+		seek_head -= 1 + persistent_db_field_size + 4;
 		ULOG_DEBUG("Verifying save hash for %p", seek_head);
 
-		seek_head -= 1 + persistent_db_field_size + 4;
 		save_checksum = crc32_verify(seek_head + 1, persistent_db_field_size, *(uint32_t *)(seek_head + 1 + persistent_db_field_size));
-
 		ULOG_DEBUG("Result: 0x%08X", save_checksum);
 	}
 
@@ -339,7 +337,7 @@ static bool ulStorage_find_new_save_block(uint8_t ** block)
 
 	uint8_t *new_block = ulStorage_find_first_free_block();
 
-	if (new_block >= (uint8_t *) (PAGE_START + PAGE_SIZE))
+	if ((new_block + 1 + persistent_db_field_size + 4) >= (uint8_t *) (PAGE_START + PAGE_SIZE))
 		return false;
 
 	*block = new_block;
@@ -382,10 +380,10 @@ static void ulStorage_write_save(uint8_t * const write_at, const uint8_t * const
 
 	HAL_FLASH_Unlock();
 
-	HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, save_data, MARKER_SAVE_BEGIN);
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, write_at, MARKER_SAVE_BEGIN);
 
-	for (uint32_t i = 1; i <= persistent_db_field_size; i++)
-		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, write_at + i, save_data[i]);
+	for (uint32_t i = 0; i < persistent_db_field_size; i++)
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, write_at + 1 + i, save_data[i]);
 
 	for (uint32_t i = 0; i < 4; i++)
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, write_at + 1 + persistent_db_field_size + i, (checksum >> (8 * i)) & 0xFF);
@@ -398,6 +396,13 @@ static void ulStorage_write_save(uint8_t * const write_at, const uint8_t * const
 bool ulStorage_init(void)
 {
 	persistent_db_field_size = ulStorage_get_save_size();
+
+	bool r = ulStorage_load();
+	if (r) {
+		ULOG_INFO("Loaded save from storage");
+	} else {
+		ULOG_INFO("Loading save from storage has failed");
+	}
 
 	return true;
 }
@@ -452,7 +457,7 @@ bool ulStorage_save(void)
 		ulStorage_write_save(new_save_address, new_save_data);
 	}
 
-	return false;
+	return true;
 }
 
 bool ulStorage_erase(void)
@@ -473,6 +478,25 @@ bool ulStorage_factoryReset(void)
 	//for (uint16_t i = 0; (p = ulDatabase_getMetadata(i)) != NULL; ulDatabase_reset(i), i++);
 
 	for (uint16_t i = 0; ulDatabase_reset(i); i++);
+	
+	/*
+	uint16_t i = 0;
+	while (ulDatabase_reset(i)) {
+		i++;
+	}
+
+	uint16_t i = 0;
+	bool r = true;
+	while (1) {
+		r = ulDatabase_reset(i);
+
+		if (!r) {
+			break
+		}
+
+		i++;
+	}
+	*/
 
 	if (!persistent_db_field_size)
 		return true;
