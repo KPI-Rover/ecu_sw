@@ -230,76 +230,10 @@ static uint8_t *ulStorage_find_first_free_block(void)
 
 static bool ulStorage_find_last_save(uint8_t **buffer)
 {
-	// --- Verify sector header ---
-
-	/*
-	uint32_t sector_header = *(uint32_t *) PAGE_START;
-
-	// verify the sector is erased
-	if (sector_header & 0x80) {
-		ULOG_WARNING("Sector is not formatted: ERASED flag is 1");
-		return false;
-	}
-
-	// verify no invalid flags are present
-	if ((sector_header & 0x2F) != 0x2F) {
-		ULOG_WARNING("Sector is not formatted: garbage flags found");
-		return false;
-	}
-
-	// verify save size matches current persistent field size
-	if ((sector_header >> 20) != persistent_db_field_size) {
-		ULOG_WARNING("Save size does not match with current size");
-		return false;
-	}
-
-	// verify hash is not there yet
-	if ((sector_header & 0x00FFFFF000) != 0x00FFFFF000) {
-		ULOG_WARNING("Garbage found in HASH header field");
-		return false;
-	}
-	*/
-
 	if (!ulStorage_verify_sector_header())
 		return false;
 
-	// --- Find last valid save ---
-
-	//uint8_t *seek_head = PAGE_START + 4,
-	//	*last_save_header == NULL;
 	uint8_t *seek_head = ulStorage_find_first_free_block();
-
-	// initial seek to first non-marked position
-	/*
-	for (
-		seek_head = (uint8_t *) PAGE_START + 4;
-		(seek_head < (uint8_t *) (PAGE_START + PAGE_SIZE)) && (*seek_head == MARKER_SAVE_BEGIN);
-		seek_head += 1 + persistent_db_field_size + 4);
-	*/
-	/*
-	for (
-		uint8_t *seek_head = (uint8_t *) PAGE_START + 4, *last_save_header = NULL;
-		(seek_head < (uint8_t *)(PAGE_START + PAGE_SIZE)) && (*seek_head == MARKER_SAVE_BEGIN);
-		last_save_header = seek_head, seek_head += 1 + persistent_fields_len + 4);
-	*/
-
-	/*
-	while (seek_head < PAGE_START + PAGE_SIZE) {
-		if (*seek_head == MARKER_SAVE_BEGIN) {
-			last_save_header = seek_head;
-			seek_head += 1 + persistent_fields_len + 4;
-		} else {
-			break;
-		}
-	}
-	*/
-
-	/*
-	if (last_save_header == NULL) {
-		ULOG_WARNING("No save data is found");
-		return false;
-	}
-	*/
 
 	// finding last valid save data
 	uint32_t save_checksum = 0xFFFFFFFF;
@@ -317,12 +251,6 @@ static bool ulStorage_find_last_save(uint8_t **buffer)
 		ULOG_WARNING("No valid saves found");
 		return false;
 	}
-
-	/*
-	// freeze DB for exclusive access
-	uint8_t *db_data = ulDatabase_freeze();
-	ulDatabase_unfreeze();
-	*/
 
 	// otherwise set the correct pointer
 	*buffer = seek_head + 1;
@@ -472,31 +400,7 @@ bool ulStorage_erase(void)
 
 bool ulStorage_factoryReset(void)
 {
-	//struct ulDatabase_ParamMetadata *p;
-
-	//for (uint16_t i = 0; p = ulDatabase_getMetadata(i), (p != NULL) && (!p->persistent); ulDatabase_ i++)
-	//for (uint16_t i = 0; (p = ulDatabase_getMetadata(i)) != NULL; ulDatabase_reset(i), i++);
-
 	for (uint16_t i = 0; ulDatabase_reset(i); i++);
-	
-	/*
-	uint16_t i = 0;
-	while (ulDatabase_reset(i)) {
-		i++;
-	}
-
-	uint16_t i = 0;
-	bool r = true;
-	while (1) {
-		r = ulDatabase_reset(i);
-
-		if (!r) {
-			break
-		}
-
-		i++;
-	}
-	*/
 
 	if (!persistent_db_field_size)
 		return true;
