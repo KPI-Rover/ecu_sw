@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "cmsis_os2.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +62,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
+#define ULOG_CDC_TRANSMIT_FINISH_FLAG 0x1
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -109,7 +110,7 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-
+extern osEventFlagsId_t ulogFlags;
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -311,6 +312,8 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
+
+  osEventFlagsSet(ulogFlags, ULOG_CDC_TRANSMIT_FINISH_FLAG);
   /* USER CODE END 13 */
   return result;
 }
