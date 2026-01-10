@@ -978,6 +978,11 @@ USBD_StatusTypeDef USBD_LL_IsoOUTIncomplete(USBD_HandleTypeDef *pdev,
   return USBD_OK;
 }
 
+#include "cmsis_os2.h"
+extern volatile uint32_t ulogUsbIsEstablished;
+extern osEventFlagsId_t ulogFlags;
+#define ULOG_DEV_CONNECTED_WAKEUP_FLAG 0x2
+
 /**
   * @brief  USBD_LL_DevConnected
   *         Handle device connection event
@@ -988,6 +993,9 @@ USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef *pdev)
 {
   /* Prevent unused argument compilation warning */
   UNUSED(pdev);
+
+  ulogUsbIsEstablished = 1;
+  osEventFlagsSet(ulogFlags, ULOG_DEV_CONNECTED_WAKEUP_FLAG);
 
   return USBD_OK;
 }
@@ -1001,6 +1009,9 @@ USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef *pdev)
 USBD_StatusTypeDef USBD_LL_DevDisconnected(USBD_HandleTypeDef *pdev)
 {
   USBD_StatusTypeDef   ret = USBD_OK;
+
+  ulogUsbIsEstablished = 0;
+  osEventFlagsClear(ulogFlags, ULOG_DEV_CONNECTED_WAKEUP_FLAG);
 
   /* Free Class Resources */
   pdev->dev_state = USBD_STATE_DEFAULT;
