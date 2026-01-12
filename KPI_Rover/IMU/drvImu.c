@@ -20,7 +20,7 @@ HAL_StatusTypeDef drvImu_Init(I2C_HandleTypeDef *hi2c, MPU_Config_t *config) {
     	return status;
     }
 
-    data = config->DlpfConfig; // 44 Hz filtering, 4.8 delay
+    data = config->DlpfConfig;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_DLPF_CONFIG, 1, &data, 1, I2C_TIMEOUT);
     if (status != HAL_OK) {
     	return status;
