@@ -75,6 +75,7 @@ void ul_ulog_init()
   }
 
   ulogFlags = osEventFlagsNew(NULL);
+  ulogUsbIsEstablished = 0;
 }
 
 void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
@@ -137,9 +138,6 @@ void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
 
 static void ulogTask(void *argument)
 {
-  ULOG_INIT();
-  ULOG_SUBSCRIBE(ul_ulog_send, ULOG_DEBUG_LEVEL);
-
   for (;;)
   {
     char logMessage[MAX_LOG_MESSAGE_SIZE];
