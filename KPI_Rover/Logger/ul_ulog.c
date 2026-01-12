@@ -149,14 +149,9 @@ static void ulogTask(void *argument)
     {
       logMessage[MAX_LOG_MESSAGE_SIZE - 1] = '\0';
 
-      if (ulogUsbIsEstablished != 1)
+      while (ulogUsbIsEstablished != 1)
       {
-        while (ulogUsbIsEstablished != 1)
-        {
-          osEventFlagsWait(ulogFlags, ULOG_DEV_CONNECTED_WAKEUP_FLAG, 0, osWaitForever);
-          osDelay(50);
-        }
-
+        osEventFlagsWait(ulogFlags, ULOG_DEV_CONNECTED_WAKEUP_FLAG, 0, osWaitForever);
         osDelay(2000);
       }
 
