@@ -2,7 +2,7 @@
 #include "cmsis_os.h"
 
 #include "Database/ulDatabase.h"
-
+#include "IMU/ulImu.h"
 
 static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, INT32, false, 0}, // MOTOR_FL_RPM,
@@ -20,7 +20,10 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, UINT8, false, 0}, // IMU_IS_CALIBRATED
 };
 
+extern I2C_HandleTypeDef hi2c3;
+
 void KPIRover_Init(void) {
 	ulDatabase_init(ulDatabase_params, sizeof(ulDatabase_params) / sizeof(struct ulDatabase_ParamMetadata));
 	ulEncoder_Init();
+	ulImu_Init(&hi2c3);
 }

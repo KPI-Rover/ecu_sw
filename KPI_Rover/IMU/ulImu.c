@@ -1,4 +1,16 @@
 #include "ulImu.h"
+#include "cmsis_os.h"
+#include "ulog.h"
+#include "Database/ulDatabase.h"
+
+
+#define IMU_POLL_PERIOD_MS 20
+
+
+static osTimerId_t imuTimerHandle;
+
+static float accel_bias[3] = {0.0f, 0.0f, 0.0f};
+static float gyro_bias[3]  = {0.0f, 0.0f, 0.0f};
 
 
 static MPU_Config_t imuCfg = {
@@ -22,13 +34,17 @@ static const float GyroScales[] = {
 };
 
 
-static float accel_bias[3] = {0.0f, 0.0f, 0.0f};
-static float gyro_bias[3]  = {0.0f, 0.0f, 0.0f};
+void ulImu_Update(I2C_HandleTypeDef *hi2c);
 
 
 static void ulImu_CalibrateGyro(I2C_HandleTypeDef *hi2c) {
     // TODO calibrate
     ulDatabase_setUint8(IMU_IS_CALIBRATED, 1);
+}
+
+void ulImu_TimerCallback(void *argument) {
+	I2C_HandleTypeDef *hi2c = (I2C_HandleTypeDef *)argument;
+	ulImu_Update(hi2c);
 }
 
 HAL_StatusTypeDef ulImu_Init(I2C_HandleTypeDef *hi2c) {
@@ -40,6 +56,20 @@ HAL_StatusTypeDef ulImu_Init(I2C_HandleTypeDef *hi2c) {
     }
 
     ulImu_CalibrateGyro(hi2c);
+
+    const osTimerAttr_t imuTimer_attributes = {
+    	.name = "IMUTimer"
+    };
+
+    imuTimerHandle = osTimerNew(ulImu_TimerCallback, osTimerPeriodic, (void*)hi2c, &imuTimer_attributes);
+    if (imuTimerHandle == NULL) {
+        ULOG_ERROR("Failed to create IMU timer");
+        return HAL_ERROR;
+    }
+    if (osTimerStart(imuTimerHandle, IMU_POLL_PERIOD_MS) != osOK) {
+        ULOG_ERROR("Failed to start IMU timer");
+        return HAL_ERROR;
+    }
 
     return HAL_OK;
 }
