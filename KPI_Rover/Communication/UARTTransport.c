@@ -80,10 +80,8 @@ void UARTTransport_run(void *arg) {
 }
 
 void UARTTransport_onUartReceive(const unsigned char *msg_ptr, short unsigned int length) {
-	uint8_t frame_length = msg_ptr[0];
-
 	//	if crc16 is broken, return or do something
-	if (crc16(msg_ptr, length)) {
+	if (crc16(msg_ptr + 1, length)) {
 		return;
 	}
 
