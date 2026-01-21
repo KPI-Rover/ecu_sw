@@ -3,8 +3,7 @@
 UART_HandleTypeDef huart;
 DMA_HandleTypeDef hdma_usart3_rx;
 
-bool drvUart_init(void)
-{
+bool drvUart_init(void) {
 	huart.Instance = USART3;
 	huart.Init.BaudRate = 115200;
 	huart.Init.WordLength = UART_WORDLENGTH_8B;
@@ -13,8 +12,7 @@ bool drvUart_init(void)
 	huart.Init.Mode = UART_MODE_TX_RX;
 	huart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
 	huart.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart) != HAL_OK)
-	{
+	if (HAL_UART_Init(&huart) != HAL_OK) {
 		return false;
 	}
 
@@ -32,12 +30,10 @@ bool drvUart_init(void)
 	return true;
 }
 
-HAL_StatusTypeDef drvUart_send(uint8_t *data, uint16_t length)
-{
+HAL_StatusTypeDef drvUart_send(uint8_t *data, uint16_t length) {
 	return HAL_UART_Transmit_DMA(&huart, data, length);
 }
 
-HAL_StatusTypeDef registerCallback(drvUart_OnReceiveCallback onReceive)
-{
+HAL_StatusTypeDef registerCallback(drvUart_OnReceiveCallback onReceive) {
 	return HAL_UART_RegisterRxEventCallback(&huart, onReceive);
 }

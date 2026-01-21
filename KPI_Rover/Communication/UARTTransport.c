@@ -1,4 +1,5 @@
 #include "UARTTransport.h"
+#include "ProtocolHandler.h"
 #include "drvUart.h"
 #include "cmsis_os.h"
 #include "messageQueueId.h"
@@ -12,13 +13,13 @@ bool UARTTransport_init(void) {
 
 	drvUart_registerCallback(UARTTransport_onUartReceive);
 
-	requestQueue = osMessageQueueNew(10, 10, NULL);
+	requestQueue = osMessageQueueNew(32, 17, NULL);
 	if (!requestQueue) {
 		return false;
 	}
 
-	answerQueue = osMessageQueueNew(10, 10, NULL);
-	if (!answerQueue) {
+	responseQueue = osMessageQueueNew(32, 53, NULL);
+	if (!responseQueue) {
 		return false;
 	}
 
@@ -39,12 +40,41 @@ void UARTTransport_send(uint8_t *data, uint16_t length) {
 //}
 
 void UARTTransport_run(void *arg) {
-	uint8_t *answer_ptr = malloc(10);
+	uint8_t response_ptr[56];
 	osStatus_t status;
 	while (true) {
-		status = osMessageQueueGet(answerQueue, answer_ptr, NULL, 0);
+		status = osMessageQueueGet(responseQueue, response_ptr + 1, NULL, 0);
 		if (status == osOK) {
-			UARTTransport_send(answer_ptr, 10);
+			switch (response_ptr[1]) {
+				case GET_API_VERSION:
+					response_ptr[0] = sizeof(GET_API_VERSION_Response);
+					break;
+				case SET_MOTOR_SPEED:
+					response_ptr[0] = sizeof(SET_MOTOR_SPEED_Response);
+					break;
+				case SET_ALL_MOTORS_SPEED:
+					response_ptr[0] = sizeof(SET_ALL_MOTORS_SPEED_Response);
+					break;
+				case GET_ENCODER:
+					response_ptr[0] = sizeof(GET_ENCODER_Response);
+					break;
+				case GET_ALL_ENCODERS:
+					response_ptr[0] = sizeof(GET_ALL_ENCODERS_Response);
+					break;
+				case GET_IMU:
+					response_ptr[0] = sizeof(GET_IMU_Response);
+					break;
+				default:
+					break;
+			}
+
+			response_ptr[0] += 4;
+
+			uint16_t crc =  crc16(response_ptr, response_ptr[0] - 2);
+			response_ptr[response_ptr[0] - 2] = crc >> 8;
+			response_ptr[response_ptr[0] - 1] = crc & 0xFF;
+
+			UARTTransport_send(response_ptr, response_ptr[0]);
 		}
 	}
 }
