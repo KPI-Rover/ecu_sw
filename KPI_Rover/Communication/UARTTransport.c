@@ -1,10 +1,12 @@
+#include <stdlib.h>
+
 #include "UARTTransport.h"
 #include "ProtocolHandler.h"
 #include "drvUart.h"
 #include "cmsis_os.h"
 #include "messageQueueId.h"
-#include <stdlib.h>
 #include "crc16.h"
+#include "ulog.h"
 
 bool UARTTransport_init(void) {
 	if (!drvUart_init()) {
@@ -65,7 +67,8 @@ void UARTTransport_run(void *arg) {
 					response_ptr[0] = sizeof(GET_IMU_Response);
 					break;
 				default:
-					break;
+					ULOG_WARNING("Unknown command id: %d", response_ptr[1]);
+					return;
 			}
 
 			response_ptr[0] += 4;
