@@ -4,10 +4,8 @@
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
 
-typedef void (*drvUart_OnReceiveCallback)(const unsigned char *, short unsigned int);
-
-bool drvUart_init(void);
+HAL_StatusTypeDef drvUart_init(void);
 HAL_StatusTypeDef drvUart_send(uint8_t *data, uint16_t length);
-void drvUart_registerCallback(drvUart_OnReceiveCallback onReceive);
+HAL_StatusTypeDef drvUart_registerCallback(pUART_CallbackTypeDef onReceive);
 
 #endif /* COMMUNICATION_DRVUART_H_ */
