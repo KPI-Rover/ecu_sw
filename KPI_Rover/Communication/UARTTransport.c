@@ -3,14 +3,18 @@
 #include "UARTTransport.h"
 #include "ProtocolHandler.h"
 #include "drvUart.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "messageQueueId.h"
 #include "crc16.h"
 #include "ulog.h"
 
-bool UARTTransport_init(void) {
-	if (!drvUart_init()) {
-		return false;
+osMessageQueueId_t requestQueue;
+osMessageQueueId_t responseQueue;
+
+HAL_StatusTypeDef UARTTransport_init(void) {
+	HAL_StatusTypeDef status = drvUart_init();
+	if (status != HAL_OK) {
+		return status;
 	}
 
 	drvUart_registerCallback(UARTTransport_onUartReceive);
@@ -31,7 +35,7 @@ bool UARTTransport_init(void) {
 			  .priority = (osPriority_t) osPriorityNormal,
 			});
 
-	return true;
+	return HAL_OK;
 }
 
 void UARTTransport_send(uint8_t *data, uint16_t length) {

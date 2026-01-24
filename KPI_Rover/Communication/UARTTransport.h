@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-bool UARTTransport_init(void);
+#include "stm32f4xx_hal.h"
+
+HAL_StatusTypeDef UARTTransport_init(void);
 void UARTTransport_send(uint8_t *data, uint16_t length);
 //void UARTTransport_receive(void);
 void UARTTransport_run(void *arg);
