@@ -2,7 +2,6 @@
 #define COMMUNICATION_UARTTRANSPORT_H_
 
 #include <stdint.h>
-#include <stdbool.h>
 
 #include "stm32f4xx_hal.h"
 
@@ -11,6 +10,6 @@ void UARTTransport_send(uint8_t *data, uint16_t length);
 //void UARTTransport_receive(void);
 void UARTTransport_run(void *arg);
 
-void UARTTransport_onUartReceive(const unsigned char *, short unsigned int);
+void UARTTransport_onUartReceive(UART_HandleTypeDef *huart, uint16_t Size);
 
 #endif /* COMMUNICATION_UARTTRANSPORT_H_ */
