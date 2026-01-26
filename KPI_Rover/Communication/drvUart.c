@@ -1,18 +1,18 @@
 #include "drvUart.h"
 #include "ulog.h"
 
-UART_HandleTypeDef huart3;
-DMA_HandleTypeDef hdma_usart3_rx;
+extern UART_HandleTypeDef huart3;
+extern uint8_t UART_rx_buffer[56];
 
 /**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART3 Initialization Function
+ * @param None
+ * @retval None
+ */
 HAL_StatusTypeDef drvUart_init(void) {
 	/**
-	  * Enable DMA controller clock
-	  */
+	 * Enable DMA controller clock
+	 */
 	/* DMA controller clock enable */
 	__HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -35,7 +35,10 @@ HAL_StatusTypeDef drvUart_init(void) {
 	HAL_StatusTypeDef status = HAL_UART_Init(&huart3);
 	if (status != HAL_OK) {
 		ULOG_ERROR("UART initialization error!");
+		return status;
 	}
+
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, UART_rx_buffer, sizeof(UART_rx_buffer));
 
 	return status;
 }
@@ -44,6 +47,6 @@ HAL_StatusTypeDef drvUart_send(uint8_t *data, uint16_t length) {
 	return HAL_UART_Transmit_DMA(&huart3, data, length);
 }
 
-HAL_StatusTypeDef drvUart_registerCallback(pUART_CallbackTypeDef onReceive) {
+HAL_StatusTypeDef drvUart_registerCallback(pUART_RxEventCallbackTypeDef onReceive) {
   return HAL_UART_RegisterRxEventCallback(&huart3, onReceive);
 }
