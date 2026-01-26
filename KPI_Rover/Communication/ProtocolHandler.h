@@ -71,6 +71,7 @@ typedef struct {
 	float quat_z;
 } GET_IMU_Response;
 
+void ProtocolHandler_init(void);
 void ProtocolHandler_run();
 void ProtocolHandler_processRequest(uint8_t *request, uint8_t *response);
 
