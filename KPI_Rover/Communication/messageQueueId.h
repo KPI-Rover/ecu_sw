@@ -1,8 +1,6 @@
 #ifndef COMMUNICATION_MESSAGEQUEUEID_H_
 #define COMMUNICATION_MESSAGEQUEUEID_H_
 
-
-//#include "stm32f4xx_hal.h"
 #include "cmsis_os2.h"
 
 extern osMessageQueueId_t requestQueue;
