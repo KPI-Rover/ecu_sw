@@ -18,6 +18,12 @@ typedef struct {
 
     pwm_source_t pwm_src;
 
+    uint8_t in1_pca_channel;
+    uint8_t in2_pca_channel;
+
+    bool          last_forward;
+
+
     union {
         struct {
             TIM_HandleTypeDef* htim;

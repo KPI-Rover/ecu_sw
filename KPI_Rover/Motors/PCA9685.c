@@ -99,3 +99,16 @@ void PCA9685_SetPWM(uint8_t channel, uint16_t on, uint16_t off)
     /* Each channel has 4 registers, starting at LED0_ON_L (0x06) */
     pca9685_write4(LED0_ON_L + 4 * channel, on, off);
 }
+
+void PCA9685_SetPin(uint8_t channel, uint8_t val)
+{
+    if (channel > 15) return;
+
+    if (val) {
+        // Full ON: Bit 4 в ON_H 1 - 4096, OFF в 0
+        pca9685_write4(LED0_ON_L + 4 * channel, 0x1000, 0x0000);
+    } else {
+        // Full OFF: ON в 0, Bit 4 в OFF_H 1 - 4096
+        pca9685_write4(LED0_ON_L + 4 * channel, 0x0000, 0x1000);
+    }
+}

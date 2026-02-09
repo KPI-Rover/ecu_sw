@@ -52,51 +52,52 @@ static const uint16_t key_setpoint[ULMOTORS_NUM_MOTORS] = {
 	MOTOR_RR_SETPOINT
 };
 
-static void ulMotorsController_UpdateFeedback(ulMotorsController_t* ctrl)
+static void Motors_UpdateFromDB_FloatArray(const uint16_t* keys, float* dst, int count)
 {
-    for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
-        int32_t rpm_db = 0;
-
-        if (ulDatabase_getInt32(key_rpm[i], &rpm_db)) {
-            ctrl->measured_rpm[i] = (float)rpm_db;
+    for (int i = 0; i < count; i++) {
+        int32_t val = 0;
+        if (ulDatabase_getInt32(keys[i], &val)) {
+            dst[i] = (float)val;
         }
     }
+}
+
+static void ulMotorsController_UpdateFeedback(ulMotorsController_t* ctrl)
+{
+    Motors_UpdateFromDB_FloatArray(key_rpm, ctrl->measured_rpm, ULMOTORS_NUM_MOTORS);
+}
+
+static void ulMotorsController_UpdateFromDB(ulMotorsController_t* ctrl)
+{
+    Motors_UpdateFromDB_FloatArray(key_setpoint, ctrl->setpoint_rpm, ULMOTORS_NUM_MOTORS);
 }
 
 
 static void init_motors_hw_mapping(ulMotorsController_t* ctrl)
 {
     // MOTOR_1_FL
-    ctrl->motors[0].IN1_port    = GPIOE;
-    ctrl->motors[0].IN1_pin     = GPIO_PIN_2;
-    ctrl->motors[0].IN2_port    = GPIOE;
-    ctrl->motors[0].IN2_pin     = GPIO_PIN_4;
     ctrl->motors[0].pwm_src     = PWM_SRC_PCA9685;
-    ctrl->motors[0].pwm.pca.channel = 0;
+    ctrl->motors[0].pwm.pca.channel = 0; // MOTOR_1_PWM
+    ctrl->motors[0].in1_pca_channel = 1; // MOTOR_1_FWD
+    ctrl->motors[0].in2_pca_channel = 2; // MOTOR_1_RVR
 
     // MOTOR_2_FR
-    ctrl->motors[1].IN1_port    = GPIOE;
-    ctrl->motors[1].IN1_pin     = GPIO_PIN_5;
-    ctrl->motors[1].IN2_port    = GPIOE;
-    ctrl->motors[1].IN2_pin     = GPIO_PIN_6;
     ctrl->motors[1].pwm_src     = PWM_SRC_PCA9685;
-    ctrl->motors[1].pwm.pca.channel = 1;
+    ctrl->motors[1].pwm.pca.channel = 4; // MOTOR_2_PWM
+    ctrl->motors[1].in1_pca_channel = 5; // MOTOR_2_FWD
+    ctrl->motors[1].in2_pca_channel = 6; // MOTOR_2_RVR
 
     // MOTOR_3_RL
-	ctrl->motors[2].IN1_port    = GPIOD;
-	ctrl->motors[2].IN1_pin     = GPIO_PIN_0;
-	ctrl->motors[2].IN2_port    = GPIOD;
-	ctrl->motors[2].IN2_pin     = GPIO_PIN_1;
 	ctrl->motors[2].pwm_src     = PWM_SRC_PCA9685;
-	ctrl->motors[2].pwm.pca.channel = 2;
+    ctrl->motors[2].pwm.pca.channel = 15; // MOTOR_3_PWM
+    ctrl->motors[2].in1_pca_channel = 14; // MOTOR_3_FWD
+    ctrl->motors[2].in2_pca_channel = 13; // MOTOR_3_RVR
 
 	// MOTOR_4_RR
-	ctrl->motors[3].IN1_port    = GPIOD;
-	ctrl->motors[3].IN1_pin     = GPIO_PIN_2;
-	ctrl->motors[3].IN2_port    = GPIOD;
-	ctrl->motors[3].IN2_pin     = GPIO_PIN_3;
 	ctrl->motors[3].pwm_src     = PWM_SRC_PCA9685;
-	ctrl->motors[3].pwm.pca.channel = 3;
+    ctrl->motors[3].pwm.pca.channel = 11; // MOTOR_4_PWM
+    ctrl->motors[3].in1_pca_channel = 10; // MOTOR_4_FWD
+    ctrl->motors[3].in2_pca_channel = 9; // MOTOR_4_RVR
 
 }
 
@@ -153,18 +154,6 @@ void ulMotorsController_Init(ulMotorsController_t* ctrl)
         }
 
         ULOG_INFO("Motor[%d] pwm_max=%.0f", i, ctrl->pwm_max[i]);
-    }
-}
-
-
-static void ulMotorsController_UpdateFromDB(ulMotorsController_t* ctrl)
-{
-    for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
-        int32_t sp_db = 0;
-
-        if (ulDatabase_getInt32(key_setpoint[i], &sp_db)) {
-            ctrl->setpoint_rpm[i] = (float)sp_db;
-        }
     }
 }
 
@@ -262,6 +251,7 @@ static void MotorsTimerCallback(void *argument)
 
         case MOTORS_STATE_IDLE:
         {
+        	ulMotorsController_UpdateFromDB(&g_motors_ctrl);
             bool need_run = false;
             for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
                 if (fabsf(g_motors_ctrl.setpoint_rpm[i]) > 1.0f) {
@@ -285,6 +275,12 @@ static void MotorsTimerCallback(void *argument)
 
         case MOTORS_STATE_RUN:
         {
+        	static uint8_t sp_div = 0;
+
+        	if (++sp_div >= 4) {
+        	    sp_div = 0;
+        	    ulMotorsController_UpdateFromDB(&g_motors_ctrl);
+        	}
         	ulMotorsController_UpdateFeedback(&g_motors_ctrl);
             ulMotorsController_Run(&g_motors_ctrl);
 
@@ -344,8 +340,6 @@ void ulMotorsController_Task(void* argument)
 
 
    	for (;;) {
-
-   		ulMotorsController_UpdateFromDB(&g_motors_ctrl);
 
    	    osDelay(20);
    	}
