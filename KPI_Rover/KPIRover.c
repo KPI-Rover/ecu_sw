@@ -17,6 +17,8 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, FLOAT, false, 0.0f}, // IMU_GYRO_X
 		{0, FLOAT, false, 0.0f}, // IMU_GYRO_Y
 		{0, FLOAT, false, 0.0f}, // IMU_GYRO_Z
+		{0, UINT8, false, 0}, // IMU_CALIB_CMD
+		{0, UINT8, false, 0}, // IMU_CALIB_STATUS
 		{0, UINT8, false, 0}, // IMU_IS_CALIBRATED
 };
 
