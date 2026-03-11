@@ -90,6 +90,7 @@ static void ulImu_Calibration(I2C_HandleTypeDef *hi2c, uint8_t cmd) {
 
         if (drvImu_GetRawData(hi2c, &raw) != HAL_OK) {
         	ulDatabase_setUint8(IMU_CALIB_STATUS, STATUS_ERROR);
+        	ULOG_ERROR("IMU: Read I2C data failed");
         	return;
         }
 
@@ -131,6 +132,7 @@ static void ulImu_Calibration(I2C_HandleTypeDef *hi2c, uint8_t cmd) {
             }
 
             ulDatabase_setUint8(IMU_CALIB_STATUS, STATUS_DONE);
+            ULOG_INFO("IMU: Calibration is done");
         }
     }
 }
@@ -170,8 +172,9 @@ static void ulImu_Update(I2C_HandleTypeDef *hi2c) {
     uint8_t cmd = CMD_IDLE;
 
     if (ulDatabase_getUint8(IMU_CALIB_CMD, &cmd) && cmd != CMD_IDLE) {
+    	ULOG_INFO("IMU: Started calibration");
     	ulImu_Calibration(hi2c, cmd);
-        return;
+    	return;
     }
     else {
         uint8_t status = STATUS_IDLE;
@@ -184,6 +187,7 @@ static void ulImu_Update(I2C_HandleTypeDef *hi2c) {
 
     MPU_RawData_t raw;
     if (drvImu_GetRawData(hi2c, &raw) != HAL_OK) {
+    	ULOG_ERROR("IMU: Read I2C data failed");
     	return;
     }
 
