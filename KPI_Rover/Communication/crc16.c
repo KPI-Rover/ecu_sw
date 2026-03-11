@@ -1,6 +1,6 @@
 #include "crc16.h"
 
-static uint16_t crc_table[UINT8_MAX];
+static uint16_t crc_table[UINT8_MAX + 1];
 
 uint16_t crc16(uint8_t const *data, size_t size) {
 	uint16_t crc = 0;
@@ -15,7 +15,7 @@ uint16_t crc16(uint8_t const *data, size_t size) {
 
 void crc16_fillTable() {
 	const uint16_t generator = 0x8005;
-	for (int dividend = 0; dividend < UINT8_MAX; ++dividend) {
+	for (int dividend = 0; dividend < UINT8_MAX + 1; ++dividend) {
 		uint16_t current_byte = dividend << 8;
 
 		for (uint8_t bit = 0; bit < 8; ++bit) {
