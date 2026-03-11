@@ -2,8 +2,35 @@
 
 static uint16_t crc_table[UINT8_MAX + 1];
 
-uint16_t crc16(uint8_t const *data, size_t size) {
-	uint16_t crc = 0;
+uint16_t crc16( const unsigned char *buf, unsigned int len )
+{
+	uint16_t crc = 0xFFFF;
+	char i = 0;
+
+	while(len--)
+	{
+		crc ^= (*buf++);
+
+		for(i = 0; i < 8; i++)
+		{
+			if( crc & 1 )
+			{
+				crc >>= 1;
+				crc ^= 0xA001;
+			}
+			else
+			{
+				crc >>= 1;
+			}
+		}
+	}
+
+	return crc;
+}
+
+uint16_t crc16_tmp1(uint8_t const * data, size_t size)
+{
+	uint16_t crc = 0xFFFF;
 	while (size--) {
 		/* XOR-in next input byte into MSB of crc, that's our new intermediate dividend */
 		uint8_t pos = (uint8_t)( (crc >> 8) ^ *data++); /* equal: ((crc ^ (b << 8)) >> 8) */
@@ -13,7 +40,8 @@ uint16_t crc16(uint8_t const *data, size_t size) {
 	return crc;
 }
 
-void crc16_fillTable() {
+void crc16_fillTable()
+{
 	const uint16_t generator = 0x8005;
 	for (int dividend = 0; dividend < UINT8_MAX + 1; ++dividend) {
 		uint16_t current_byte = dividend << 8;
