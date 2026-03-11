@@ -1,6 +1,6 @@
 #include "crc16.h"
 
-uint16_t crc_table[UINT8_MAX];
+static uint16_t crc_table[UINT8_MAX];
 
 uint16_t crc16(uint8_t const *data, size_t size) {
 	uint16_t crc = 0;
