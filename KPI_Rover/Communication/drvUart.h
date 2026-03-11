@@ -1,0 +1,15 @@
+#ifndef __DRV_UART_H
+#define __DRV_UART_H
+
+#include <stdbool.h>
+
+#define DRV_UART_RECEIVE_BUFFER_SIZE 32
+#define DRV_UART_TRANSMIT_BUFFER_SIZE 53
+
+bool drvUart_start(void);
+bool drvUart_on_rx_cplt(void (*f)(const uint8_t * const buffer));
+bool drvUart_on_tx_cplt(void (*f)(void));
+bool drvUart_send(uint8_t *buf);
+
+
+#endif /* __DRV_UART_H */
