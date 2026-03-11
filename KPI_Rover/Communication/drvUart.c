@@ -143,16 +143,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		activeReceiveBuffer = tmp;
 	}
 
-	// verify packet is not corrupted
-	if (crc16(sideReceiveBuffer + 1, Size - 1)) {
-		// drop packet on failure
-		return;
+	// then process every received packet
+	{
+		static uint16_t offset;
+
+		for (offset = 0; offset < Size; offset += 3 + sideReceiveBuffer[1 + offset]) {
+			// verify packet is not corrupted
+			if (crc16(sideReceiveBuffer + 1 + offset, sideReceiveBuffer[1 + offset])) {
+				// drop packet on failure
+				return;
+			}
+
+			sideReceiveBuffer[1 + offset] -= 2; // exclude size of CRC16
+
+			// then call the callback (stripping 0xAA from the data)
+			on_rx_cplt(sideReceiveBuffer + 1 + offset);
+		}
 	}
-
-	sideReceiveBuffer[1] -= 2; // exclude size of CRC16
-
-	// then call the callback (stripping 0xAA from the data)
-	on_rx_cplt(sideReceiveBuffer + 1);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {

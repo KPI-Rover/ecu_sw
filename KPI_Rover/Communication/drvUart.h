@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define DRV_UART_RECEIVE_BUFFER_SIZE 32
+#define DRV_UART_RECEIVE_BUFFER_SIZE 256
 #define DRV_UART_TRANSMIT_BUFFER_SIZE 53
 
 bool drvUart_start(void);
