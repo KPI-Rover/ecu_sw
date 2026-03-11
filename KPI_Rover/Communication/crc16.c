@@ -3,14 +3,14 @@
 uint16_t crc_table[UINT8_MAX];
 
 uint16_t crc16(uint8_t const *data, size_t size) {
-  uint16_t crc = 0;
-  while (size--) {
-	  /* XOR-in next input byte into MSB of crc, that's our new intermediate dividend */
-	  uint8_t pos = (uint8_t)( (crc >> 8) ^ *data++); /* equal: ((crc ^ (b << 8)) >> 8) */
-	  /* Shift out the MSB used for division per lookuptable and XOR with the remainder */
-	  crc = (uint16_t)((crc << 8) ^ (uint16_t)(crc_table[pos]));
-  }
-  return crc;
+	uint16_t crc = 0;
+	while (size--) {
+		/* XOR-in next input byte into MSB of crc, that's our new intermediate dividend */
+		uint8_t pos = (uint8_t)( (crc >> 8) ^ *data++); /* equal: ((crc ^ (b << 8)) >> 8) */
+		/* Shift out the MSB used for division per lookuptable and XOR with the remainder */
+		crc = (uint16_t)((crc << 8) ^ (uint16_t)(crc_table[pos]));
+	}
+	return crc;
 }
 
 void crc16_fillTable() {
