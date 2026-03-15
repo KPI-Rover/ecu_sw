@@ -143,6 +143,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		activeReceiveBuffer = tmp;
 	}
 
+	if (on_rx_cplt == NULL)
+		return;
+
 	// then process every received packet
 	{
 		static uint16_t offset;
@@ -163,5 +166,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+	if (on_tx_cplt == NULL)
+		return;
+
 	on_tx_cplt();
 }
