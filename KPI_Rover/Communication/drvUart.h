@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define DRV_UART_RECEIVE_BUFFER_SIZE 256
-#define DRV_UART_TRANSMIT_BUFFER_SIZE 53
+#define DRV_UART_TRANSMIT_BUFFER_SIZE 255
 
 bool drvUart_start(void);
 bool drvUart_on_rx_cplt(void (*f)(const uint8_t * const buffer));
