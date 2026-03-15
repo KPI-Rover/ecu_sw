@@ -161,8 +161,11 @@ static uint32_t ulStorage_get_save_size(void)
 	for (uint16_t i = 0; i < PARAM_COUNT; i++) {
 		struct ulDatabase_ParamMetadata *p = ulDatabase_getMetadata(i);
 
-		if (p == NULL)
-			return false;
+		if (p == NULL) {
+			ULOG_ERROR("p == NULL, but parameter should exist (i = %hu, PARAM_COUNT = %hu); this is not possible, disabling ulStorage to prevent further damage",
+					i, (uint16_t) PARAM_COUNT);
+			return 0;
+		}
 
 		if (!p->persistent)
 			break;
