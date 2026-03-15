@@ -44,8 +44,8 @@ void UARTTransport_onTxCplt(void)
 
 void UARTTransport_init(void)
 {
-	(void) drvUart_on_rx_cplt(UARTTransport_onRxCplt);
-	(void) drvUart_on_tx_cplt(UARTTransport_onTxCplt);
+	(void) drvUart_set_on_rx_cplt(UARTTransport_onRxCplt);
+	(void) drvUart_set_on_tx_cplt(UARTTransport_onTxCplt);
 
 	(void) drvUart_start();
 

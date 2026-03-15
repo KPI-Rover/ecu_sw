@@ -99,14 +99,14 @@ bool drvUart_start(void)
 	return true;
 }
 
-bool drvUart_on_rx_cplt(void (*f)(const uint8_t * const buffer))
+bool drvUart_set_on_rx_cplt(void (*f)(const uint8_t * const buffer))
 {
 	on_rx_cplt = f;
 
 	return true;
 }
 
-bool drvUart_on_tx_cplt(void (*f)(void))
+bool drvUart_set_on_tx_cplt(void (*f)(void))
 {
 	on_tx_cplt = f;
 
