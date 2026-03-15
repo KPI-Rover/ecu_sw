@@ -151,13 +151,21 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		static uint16_t offset;
 
 		for (offset = 0; offset < Size; offset += 3 + sideReceiveBuffer[1 + offset]) {
-			// verify packet is not corrupted
-			if (crc16(sideReceiveBuffer + 1 + offset, sideReceiveBuffer[1 + offset])) {
-				// drop packet on failure
+			// verify packet is not too short (1 byte for size, 1+ byte(s) for command and 2 bytes for CRC16)
+			if (sideReceiveBuffer[1 + offset] < 4)
+				// drop ALL remaining packets on failure
 				return;
-			}
 
-			sideReceiveBuffer[1 + offset] -= 2; // exclude size of CRC16
+			// verify packet length does not overflow received frame size
+			if (1 + offset + sideReceiveBuffer[1 + offset] > Size)
+				return;
+
+			// verify packet is not corrupted
+			if (crc16(sideReceiveBuffer + 1 + offset, sideReceiveBuffer[1 + offset]))
+				return;
+
+			// exclude size of CRC16
+			sideReceiveBuffer[1 + offset] -= 2;
 
 			// then call the callback (stripping 0xAA from the data)
 			on_rx_cplt(sideReceiveBuffer + 1 + offset);
