@@ -4,6 +4,7 @@
 #include "Database/ulDatabase.h"
 #include "Database/ulStorage.h"
 #include "Encoders/ulEncoder.h"
+#include "Communication/ProtocolHandler.h"
 
 #include "ulog.h"
 #include "ul_ulog.h"
@@ -23,4 +24,5 @@ void KPIRover_Init(void) {
 	ulDatabase_init(ulDatabase_params, sizeof(ulDatabase_params) / sizeof(struct ulDatabase_ParamMetadata));
 	ulStorage_init();
 	ulEncoder_Init();
+	ProtocolHandler_init();
 }
