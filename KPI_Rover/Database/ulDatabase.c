@@ -403,6 +403,18 @@ bool ulDatabase_reset(uint16_t id)
 	return true;
 }
 
+uint8_t *ulDatabase_freeze(void)
+{
+	DB_LOCK();
+
+	return db.dataArray;
+}
+
+void ulDatabase_unfreeze(void)
+{
+	DB_FREE();
+}
+
 struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id)
 {
 	if (!ulDatabase_validateId(id))

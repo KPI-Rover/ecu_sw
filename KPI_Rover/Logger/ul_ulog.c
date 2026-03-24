@@ -46,6 +46,11 @@ static StaticQueue_t xUlogQueueBuffer;
 static uint8_t ucUlogQueueStorage[LOG_QUEUE_LENGTH * MAX_LOG_MESSAGE_SIZE];
 static QueueHandle_t xULogQueue = NULL;
 
+volatile uint32_t ulogUsbIsEstablished;
+osEventFlagsId_t ulogFlags;
+#define ULOG_CDC_TRANSMIT_FINISH_FLAG 0x1
+#define ULOG_DEV_CONNECTED_WAKEUP_FLAG 0x2
+
 static const osThreadAttr_t ulogTask_attributes = {
   .name = "ulogTask",
   .stack_size = 128 * 4,
@@ -68,6 +73,9 @@ void ul_ulog_init()
   {
     Error_Handler();
   }
+
+  ulogFlags = osEventFlagsNew(NULL);
+  ulogUsbIsEstablished = 0;
 }
 
 void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
@@ -113,24 +121,23 @@ void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
     logBuffer[sizeof(logBuffer) - 1] = '\0';
   }
   
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-   if (xPortIsInsideInterrupt()) {
-       xQueueSendFromISR(xULogQueue, logBuffer, &xHigherPriorityTaskWoken);
-       portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-   } else {
-       xQueueSend(xULogQueue, logBuffer, pdMS_TO_TICKS(10));
-   }
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  if (uxQueueSpacesAvailable(xULogQueue))
+  {
+    if (xPortIsInsideInterrupt())
+    {
+      xQueueSendFromISR(xULogQueue, logBuffer, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+    else
+    {
+      xQueueSend(xULogQueue, logBuffer, pdMS_TO_TICKS(10));
+    }
+  }
 }
 
 static void ulogTask(void *argument)
 {
-  // TODO: Try to get rid of this delay
-  // Wait a bit for USB to initialize before starting logging
-  osDelay(2000);
-
-  ULOG_INIT();
-  ULOG_SUBSCRIBE(ul_ulog_send, ULOG_DEBUG_LEVEL);
-
   for (;;)
   {
     char logMessage[MAX_LOG_MESSAGE_SIZE];
@@ -139,7 +146,15 @@ static void ulogTask(void *argument)
     if (result == pdTRUE)
     {
       logMessage[MAX_LOG_MESSAGE_SIZE - 1] = '\0';
+
+      while (ulogUsbIsEstablished != 1)
+      {
+        osEventFlagsWait(ulogFlags, ULOG_DEV_CONNECTED_WAKEUP_FLAG, 0, osWaitForever);
+        osDelay(2000);
+      }
+
       CDC_Transmit_FS((uint8_t *)logMessage, strlen(logMessage));
+      osEventFlagsWait(ulogFlags, ULOG_CDC_TRANSMIT_FINISH_FLAG, 0, 100);
     }
   }
 }
