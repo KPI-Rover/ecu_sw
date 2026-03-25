@@ -17,12 +17,12 @@ enum ulDatabase_ParamType {
 };
 
 enum ulDatabase_ParamId {
+	ENCODER_CONTROL_PERIOD_MS,
+	ENCODER_TICKS_PER_REVOLUTION,
 	MOTOR_FL_RPM,
 	MOTOR_FR_RPM,
 	MOTOR_RL_RPM,
 	MOTOR_RR_RPM,
-	ENCODER_CONTROL_PERIOD_MS,
-	ENCODER_TICKS_PER_REVOLUTION,
 	IMU_ACCEL_X,
 	IMU_ACCEL_Y,
 	IMU_ACCEL_Z,
@@ -65,5 +65,7 @@ bool ulDatabase_getInt32(uint16_t id, int32_t *value);
 bool ulDatabase_setFloat(uint16_t id, float value);
 bool ulDatabase_getFloat(uint16_t id, float *value);
 bool ulDatabase_reset(uint16_t id);
+uint8_t *ulDatabase_freeze(void);
+void ulDatabase_unfreeze(void);
 struct ulDatabase_ParamMetadata *ulDatabase_getMetadata(uint16_t id);
 bool ulDatabase_validateId(uint16_t id);
