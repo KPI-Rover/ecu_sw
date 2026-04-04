@@ -17,16 +17,16 @@ static osThreadAttr_t ta = {
 	.stack_size = 64 * 4
 };
 
-static void dispatch_00(void) {}
+static void dispatch_not_a_command(void) {}
 
-static void dispatch_01(void)
+static void dispatch_get_api_version(void)
 {
 	sendBuffer[0] = 0x01;
 	sendBuffer[1] = 0x01;
 	UARTTransport_send(sendBuffer, 2);
 }
 
-static void dispatch_02(void)
+static void dispatch_set_motor_speed(void)
 {
 	sendBuffer[0] = 0x02;
 
@@ -51,23 +51,23 @@ static void dispatch_02(void)
 	UARTTransport_send(sendBuffer, 2);
 }
 
-static void dispatch_03(void)
+static void dispatch_set_all_motors_speed(void)
 {
 	sendBuffer[0] = 0x03;
 	sendBuffer[1] = 0x00;
 	UARTTransport_send(sendBuffer, 2);
 }
 
-static void dispatch_04(void) {}
+static void dispatch_get_encoder(void) {}
 
-static void dispatch_05(void)
+static void dispatch_get_all_encoders(void)
 {
 	sendBuffer[0] = 0x05;
 	memset(sendBuffer + 1, 0xBB, 16);
 	UARTTransport_send(sendBuffer, 17);
 }
 
-static void dispatch_06(void)
+static void dispatch_get_imu(void)
 {
 	sendBuffer[0] = 0x06;
 	memset(sendBuffer + 1, 0xCC, 52);
@@ -75,13 +75,13 @@ static void dispatch_06(void)
 }
 
 static const void (*dispatch_table[])(void) = {
-	dispatch_00,
-	dispatch_01,
-	dispatch_02,
-	dispatch_03,
-	dispatch_04,
-	dispatch_05,
-	dispatch_06,
+	dispatch_not_a_command,
+	dispatch_get_api_version,
+	dispatch_set_motor_speed,
+	dispatch_set_all_motors_speed,
+	dispatch_get_encoder,
+	dispatch_get_all_encoders,
+	dispatch_get_imu,
 };
 
 void ProtocolHandler_processTask(void *d)
