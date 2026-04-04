@@ -138,7 +138,24 @@ static void dispatch_get_all_encoders(void)
 static void dispatch_get_imu(void)
 {
 	sendBuffer[0] = 0x06;
-	memset(sendBuffer + 1, 0xCC, 52);
+
+	ulDatabase_getFloat(IMU_ACCEL_X, (float *) (sendBuffer + 1));
+	ulDatabase_getFloat(IMU_ACCEL_Y, (float *) (sendBuffer + 5));
+	ulDatabase_getFloat(IMU_ACCEL_Z, (float *) (sendBuffer + 9));
+
+	ulDatabase_getFloat(IMU_GYRO_X, (float *) (sendBuffer + 13));
+	ulDatabase_getFloat(IMU_GYRO_Y, (float *) (sendBuffer + 17));
+	ulDatabase_getFloat(IMU_GYRO_Z, (float *) (sendBuffer + 21));
+
+	ulDatabase_getFloat(IMU_MAG_X, (float *) (sendBuffer + 25));
+	ulDatabase_getFloat(IMU_MAG_Y, (float *) (sendBuffer + 29));
+	ulDatabase_getFloat(IMU_MAG_Z, (float *) (sendBuffer + 33));
+
+	ulDatabase_getFloat(IMU_QUAT_X, (float *) (sendBuffer + 37));
+	ulDatabase_getFloat(IMU_QUAT_X, (float *) (sendBuffer + 41));
+	ulDatabase_getFloat(IMU_QUAT_Y, (float *) (sendBuffer + 45));
+	ulDatabase_getFloat(IMU_QUAT_Z, (float *) (sendBuffer + 49));
+
 	UARTTransport_send(sendBuffer, 53);
 }
 
