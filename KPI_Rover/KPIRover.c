@@ -17,6 +17,10 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, INT32, false, 0}, // MOTOR_FR_RPM,
 		{0, INT32, false, 0}, // MOTOR_RL_RPM,
 		{0, INT32, false, 0}, // MOTOR_RR_RPM,
+		{0, INT32, false, 0}, // TARGET_MOTOR_FL_RPM,
+		{0, INT32, false, 0}, // TARGET_MOTOR_FR_RPM,
+		{0, INT32, false, 0}, // TARGET_MOTOR_RL_RPM,
+		{0, INT32, false, 0}, // TARGET_MOTOR_RR_RPM,
 		{0, FLOAT, false, 0.0f}, // IMU_ACCEL_X
 		{0, FLOAT, false, 0.0f}, // IMU_ACCEL_Y
 		{0, FLOAT, false, 0.0f}, // IMU_ACCEL_Z
