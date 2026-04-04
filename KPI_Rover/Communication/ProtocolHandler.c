@@ -17,6 +17,11 @@ static osThreadAttr_t ta = {
 	.stack_size = 64 * 4
 };
 
+static int32_t switch_endianness_int32(const uint8_t * const address)
+{
+	return (int32_t) ((((uint32_t)address[0]) << 24) + (((uint32_t)address[1]) << 16) + (((uint32_t)address[2]) << 8) + ((uint32_t)address[3]));
+}
+
 static void dispatch_not_a_command(void) {}
 
 static void dispatch_get_api_version(void)
