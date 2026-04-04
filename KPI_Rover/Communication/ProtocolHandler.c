@@ -36,19 +36,24 @@ static void dispatch_get_api_version(void)
 static void dispatch_set_motor_speed(void)
 {
 	sendBuffer[0] = 0x02;
+	sendBuffer[1] = 0x00;
+
+	static int32_t target_value;
+
+	target_value = switch_endianness_int32(&(recvBuffer[2])); // big (network) to little (host)
 
 	switch (recvBuffer[1]) {
 	case 0:
-		sendBuffer[1] = 0x0;
+		ulDatabase_setInt32(MOTOR_FL_SETPOINT, target_value);
 		break;
 	case 1:
-		sendBuffer[1] = 0x0;
+		ulDatabase_setInt32(MOTOR_RL_SETPOINT, target_value);
 		break;
 	case 2:
-		sendBuffer[1] = 0x0;
+		ulDatabase_setInt32(MOTOR_FR_SETPOINT, target_value);
 		break;
 	case 3:
-		sendBuffer[1] = 0x0;
+		ulDatabase_setInt32(MOTOR_RR_SETPOINT, target_value);
 		break;
 	default:
 		sendBuffer[1] = 0x01;
@@ -60,6 +65,18 @@ static void dispatch_set_motor_speed(void)
 
 static void dispatch_set_all_motors_speed(void)
 {
+	static int32_t target_value_fl, target_value_rl, target_value_fr, target_value_rr;
+
+	target_value_fl = switch_endianness_int32(&(recvBuffer[1]));
+	target_value_rl = switch_endianness_int32(&(recvBuffer[5]));
+	target_value_fr = switch_endianness_int32(&(recvBuffer[9]));
+	target_value_rr = switch_endianness_int32(&(recvBuffer[13]));
+
+	ulDatabase_setInt32(MOTOR_FL_SETPOINT, target_value_fl);
+	ulDatabase_setInt32(MOTOR_RL_SETPOINT, target_value_rl);
+	ulDatabase_setInt32(MOTOR_FR_SETPOINT, target_value_fr);
+	ulDatabase_setInt32(MOTOR_RR_SETPOINT, target_value_rr);
+
 	sendBuffer[0] = 0x03;
 	sendBuffer[1] = 0x00;
 	UARTTransport_send(sendBuffer, 2);
