@@ -82,12 +82,56 @@ static void dispatch_set_all_motors_speed(void)
 	UARTTransport_send(sendBuffer, 2);
 }
 
-static void dispatch_get_encoder(void) {}
+static void dispatch_get_encoder(void)
+{
+	sendBuffer[0] = 0x04;
+
+	static int32_t source_value;
+
+	switch (recvBuffer[1]) {
+	case 0:
+		ulDatabase_getInt32(MOTOR_FL_RPM, &source_value);
+		break;
+	case 1:
+		ulDatabase_getInt32(MOTOR_RL_RPM, &source_value);
+		break;
+	case 2:
+		ulDatabase_getInt32(MOTOR_FR_RPM, &source_value);
+		break;
+	case 3:
+		ulDatabase_getInt32(MOTOR_RR_RPM, &source_value);
+		break;
+	default:
+		// failure is not an option in the protocol
+		break;
+	}
+
+	source_value = switch_endianness_int32((uint8_t *) &source_value); // little (host) to big (network)
+	memcpy(&(sendBuffer[1]), &source_value, sizeof(source_value));
+
+	UARTTransport_send(sendBuffer, 5);
+}
 
 static void dispatch_get_all_encoders(void)
 {
+	static int32_t source_value_fl, source_value_rl, source_value_fr, source_value_rr;
+
+	ulDatabase_getInt32(MOTOR_FL_RPM, &source_value_fl);
+	ulDatabase_getInt32(MOTOR_RL_RPM, &source_value_rl);
+	ulDatabase_getInt32(MOTOR_FR_RPM, &source_value_fr);
+	ulDatabase_getInt32(MOTOR_RR_RPM, &source_value_rr);
+
+	source_value_fl = switch_endianness_int32((uint8_t *) &source_value_fl);
+	source_value_rl = switch_endianness_int32((uint8_t *) &source_value_rl);
+	source_value_fr = switch_endianness_int32((uint8_t *) &source_value_fr);
+	source_value_rr = switch_endianness_int32((uint8_t *) &source_value_rr);
+
 	sendBuffer[0] = 0x05;
-	memset(sendBuffer + 1, 0xBB, 16);
+	memcpy(&(sendBuffer[1]), &source_value_fl, sizeof(source_value_fl));
+	memcpy(&(sendBuffer[5]), &source_value_rl, sizeof(source_value_rl));
+	memcpy(&(sendBuffer[9]), &source_value_fr, sizeof(source_value_fr));
+	memcpy(&(sendBuffer[13]), &source_value_rr, sizeof(source_value_rr));
+
 	UARTTransport_send(sendBuffer, 17);
 }
 
