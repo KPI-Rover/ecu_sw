@@ -35,7 +35,7 @@ static void ulEncoder_TimerCallback(void *argument) {
         float rpm = ticks_per_sec * 60.0f / encoder_ticks_per_rev;
 
         int32_t rpm_to_db = (int32_t)rpm;
-        ulDatabase_setInt32(MOTOR_FL_RPM + i, rpm_to_db);
+        ulDatabase_setInt32(ENCODER_MOTOR_FL_RPM + i, rpm_to_db);
 
         lastTicks_RPM[i] = currentTicks;
     }
