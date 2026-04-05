@@ -311,7 +311,7 @@ void ulMotorsController_Task(void* argument)
    	   osThreadExit();
    	}
 
-   	osDelay(10);
+   	osDelay(5);
 
    	if (osTimerStart(motors_timer_handle, MOTORS_CONTROL_PERIOD_MS) != osOK) {
    	   ULOG_ERROR("Failed to start Motors timer");
@@ -321,6 +321,6 @@ void ulMotorsController_Task(void* argument)
 
    	for (;;) {
 
-   	    osDelay(20);
+   	    osDelay(5);
    	}
 }
