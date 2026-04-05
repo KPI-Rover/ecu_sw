@@ -30,6 +30,7 @@ typedef enum
     MOTORS_STATE_INIT = 0,
     MOTORS_STATE_IDLE,
     MOTORS_STATE_RUN,
+	MOTORS_STATE_TEST, // TEST
     MOTORS_STATE_ERROR
 } MotorsCtrlState_t;
 

@@ -2,7 +2,7 @@
 #include "stm32f4xx_hal.h"
 
 /* I2C Handle defined in main.c */
-extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c3;
 
 /* PCA9685 I2C address */
 /* 0x40 is the 7-bit address. HAL requires it shifted left by 1 (0x80) */
@@ -18,7 +18,7 @@ extern I2C_HandleTypeDef hi2c1;
  */
 static void pca9685_write(uint8_t reg, uint8_t data)
 {
-    HAL_I2C_Mem_Write(&hi2c1,
+    HAL_I2C_Mem_Write(&hi2c3,
                       PCA9685_ADDR,
                       reg,
                       I2C_MEMADD_SIZE_8BIT,
@@ -40,7 +40,7 @@ static void pca9685_write4(uint8_t reg, uint16_t on, uint16_t off)
     buf[2] = off & 0xFF;      // OFF_L
     buf[3] = off >> 8;        // OFF_H
 
-    HAL_I2C_Mem_Write(&hi2c1,
+    HAL_I2C_Mem_Write(&hi2c3,
                       PCA9685_ADDR,
                       reg,
                       I2C_MEMADD_SIZE_8BIT,

@@ -160,8 +160,6 @@ void ulMotorsController_Init(ulMotorsController_t* ctrl)
 
 void ulMotorsController_Run(ulMotorsController_t* ctrl)
 {
-    static char teleplot_buf[512];
-    teleplot_buf[0] = '\0';
     const float MAX_RPM_CONST = 250.0f;
 
     for (int i = 0; i < ULMOTORS_NUM_MOTORS; i++) {
@@ -210,24 +208,6 @@ void ulMotorsController_Run(ulMotorsController_t* ctrl)
             &ctrl->pids[i].kp,
             &ctrl->pids[i].ki
         );
-
-
-//             TELEPLOT
-        char tmp[64];
-		snprintf(tmp, sizeof(tmp), ">M%d_SP:%d\n>M%d_RPM:%d\n>M%d_PWM:%lu\n>M%d_P:%.4f\n>M%d_I:%.4f\n",
-				 i, (int)sp,
-				 i, (int)rpm,
-				 i, pwm_hw,
-				 i, ctrl->pids[i].kp,
-				 i, ctrl->pids[i].ki);
-
-        if (strlen(teleplot_buf) + strlen(tmp) < sizeof(teleplot_buf) - 1) {
-             strcat(teleplot_buf, tmp);
-        }
-    }
-
-    if (strlen(teleplot_buf) > 0) {
-        CDC_Transmit_FS((uint8_t*)teleplot_buf, strlen(teleplot_buf));
     }
 }
 
