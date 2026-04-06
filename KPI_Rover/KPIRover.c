@@ -1,6 +1,7 @@
+#include <Motors/ulMotorsController.h>
+#include <Encoders/ulEncoder.h>
 #include "KPIRover.h"
 #include "cmsis_os.h"
-
 #include "Database/ulDatabase.h"
 #include "Database/ulStorage.h"
 #include "Encoders/ulEncoder.h"
@@ -13,6 +14,22 @@
 static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, UINT16, true, 5}, // ENCODER_CONTROL_PERIOD_MS,
 		{0, FLOAT, true, 820.0f}, // ENCODER_TICKS_PER_REVOLUTION,
+		{0, FLOAT, true, 0.046f}, // MOTOR_FL_KP
+		{0, FLOAT, true, 0.013f}, // MOTOR_FL_KI
+		{0, FLOAT, true, 0.0001f}, // MOTOR_FL_KD
+		{0, FLOAT, true, 0.046f}, // MOTOR_FR_KP
+		{0, FLOAT, true, 0.013f}, // MOTOR_FR_KI
+		{0, FLOAT, true, 0.0001f}, // MOTOR_FR_KD
+		{0, FLOAT, true, 0.046f}, // MOTOR_RL_KP
+		{0, FLOAT, true, 0.013f}, // MOTOR_RL_KI
+		{0, FLOAT, true, 0.0001f}, // MOTOR_RL_KD
+		{0, FLOAT, true, 0.046f}, // MOTOR_RR_KP
+		{0, FLOAT, true, 0.013f}, // MOTOR_RR_KI
+		{0, FLOAT, true, 0.0001f}, // MOTOR_RR_KD
+		{0, INT32, false, 0}, // MOTOR_FL_SETPOINT,
+		{0, INT32, false, 0}, // MOTOR_FR_SETPOINT,
+		{0, INT32, false, 0}, // MOTOR_RL_SETPOINT,
+		{0, INT32, false, 0}, // MOTOR_RR_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_FL_RPM,
 		{0, INT32, false, 0}, // MOTOR_FR_RPM,
 		{0, INT32, false, 0}, // MOTOR_RL_RPM,
@@ -38,4 +55,12 @@ void KPIRover_Init(void) {
 	ulEncoder_Init();
 	ulImu_Init(&hi2c3);
 	ProtocolHandler_init();
+
+	static const osThreadAttr_t MotorsCtrlTask_attributes = {
+		.name = "MotorsCtrlTask",
+		.priority = (osPriority_t) osPriorityNormal,
+		.stack_size = 1024 * 4
+	};
+	(void) osThreadNew(ulMotorsController_Task, NULL, &MotorsCtrlTask_attributes);
+
 }
