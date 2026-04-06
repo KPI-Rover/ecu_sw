@@ -13,8 +13,8 @@
 #define ADC_MAX_VAL        4095.0f
 #define ADC_VREF           3.3f
 
-// 1. Battery: Voltage Divider /2.V = Raw * (3.3/4095) * 2
-#define BAT_DEFAULT_SCALE  ((ADC_VREF / ADC_MAX_VAL) * 2.0f)
+// 1. Battery: Voltage Divider (100k + 22k) / 22k
+#define BAT_DEFAULT_SCALE  ((ADC_VREF / ADC_MAX_VAL) * ((100.0f + 22.0f) / 22.0f))
 #define BAT_DEFAULT_OFFSET 0
 
 // 2. Temp: T = (V - V25)/Slope + 25
@@ -84,7 +84,7 @@ adc_channel_ctx_t app_adc_ctx[] = {
 static void ulAdc_GetHardcodedDefaults_Bat(float* defScale, int32_t* defOffset) {
     const float Vref = 3.3f;
     const float MaxAdc = 4095.0f;
-    const float DivFactor = 2.0f; // (R1+R2)/R2
+    const float DivFactor = (100.0f + 22.0f) / 22.0f; // (R1+R2)/R2
 
     // Val = Scale * (Raw - Offset)
     // Offset = 0
@@ -144,7 +144,7 @@ void ulAdc_CallbackHandler(uint8_t channel, uint32_t filteredRaw, void* ctx_void
             {
                 uint8_t start_cmd = 0;
 
-                if (ulDatabase_getUint8(ADC_CALIBRATION_START, &start_cmd) == 0 && start_cmd == 0xF1) {
+                if (ulDatabase_getUint8(ADC_CALIBRATION_START, &start_cmd) && start_cmd == 0xF1) {
                     uint8_t target_ch = 0;
                     ulDatabase_getUint8(ADC_CALIBRATION_CHANNEL_ID, &target_ch);
                     if (target_ch == ctx->hw_channel) {
@@ -220,13 +220,13 @@ void ulAdc_init(void) {
         int32_t stored_offset;
 		float stored_scale;
 
-		if (ulDatabase_getInt32(ctx->db_id_cal_offset, &stored_offset) == 0) {
-			ctx->active_offset = stored_offset;
+		if (ulDatabase_getInt32(ctx->db_id_cal_offset, &stored_offset) && stored_offset != 0) {
+		    ctx->active_offset = stored_offset;
 		} else {
-			ctx->active_offset = def_offset;
+		    ctx->active_offset = def_offset;
 		}
 
-		if (ulDatabase_getFloat(ctx->db_id_cal_scale, &stored_scale) == 0 &&
+		if (ulDatabase_getFloat(ctx->db_id_cal_scale, &stored_scale) &&
 			isfinite(stored_scale) && fabsf(stored_scale) > 1e-9f) {
 			ctx->active_scale = stored_scale;
 		} else {
