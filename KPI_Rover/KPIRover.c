@@ -7,6 +7,7 @@
 #include "Encoders/ulEncoder.h"
 #include "Communication/ProtocolHandler.h"
 #include "IMU/ulImu.h"
+#include "ADC/ulAdc.h"
 
 #include "ulog.h"
 #include "ul_ulog.h"
@@ -43,6 +44,16 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, UINT8, false, 0}, // IMU_CALIB_CMD
 		{0, UINT8, false, 0}, // IMU_CALIB_STATUS
 		{0, UINT8, false, 0}, // IMU_IS_CALIBRATED
+		{0, UINT8, false, 0}, // ADC_CALIBRATION_START,
+		{0, UINT8, false, 0}, // ADC_CALIBRATION_POINT,
+		{0, FLOAT, false, 0}, // ADC_CALIBRATION_POINT_VALUE,
+		{0, INT32, true, 0}, // ADC_CAL_CH_11_OFFSET,
+		{0, INT32, true, 0}, // ADC_CAL_CH_TEMP_OFFSET,
+		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_11_SCALE,
+		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_TEMP_SCALE,
+		{0, UINT8, false, 0}, // ADC_CALIBRATION_CHANNEL_ID
+		{0, FLOAT, false, 0}, // PARAM_BATTERY_VOLTAGE,
+		{0, FLOAT, false, 0}, // PARAM_MCU_TEMPERATURE
 };
 
 extern I2C_HandleTypeDef hi2c3;
@@ -63,4 +74,11 @@ void KPIRover_Init(void) {
 	};
 	(void) osThreadNew(ulMotorsController_Task, NULL, &MotorsCtrlTask_attributes);
 
+	// ADC
+	const osThreadAttr_t adcTask_attributes = {
+		  .name = "adcTask",
+		  .priority = (osPriority_t) osPriorityNormal,
+		  .stack_size = 256 * 4
+	  };
+	(void) osThreadNew(ulAdc_task, NULL, &adcTask_attributes);
 }
