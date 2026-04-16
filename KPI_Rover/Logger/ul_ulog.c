@@ -51,6 +51,10 @@ osEventFlagsId_t ulogFlags;
 #define ULOG_CDC_TRANSMIT_FINISH_FLAG 0x1
 #define ULOG_DEV_CONNECTED_WAKEUP_FLAG 0x2
 
+static StaticSemaphore_t ulUlog_mutex_storage;
+#define ULOG_LOCK() osMutexAcquire(&ulUlog_mutex_storage, osWaitForever)
+#define ULOG_UNLOCK() osMutexRelease(&ulUlog_mutex_storage)
+
 static const osThreadAttr_t ulogTask_attributes = {
   .name = "ulogTask",
   .stack_size = 128 * 4,
@@ -75,16 +79,21 @@ void ul_ulog_init()
 
   ulogFlags = osEventFlagsNew(NULL);
   ulogUsbIsEstablished = 0;
+
+  {
+    const static osMutexAttr_t mutex_attrs = {NULL, 0, &ulUlog_mutex_storage, sizeof(ulUlog_mutex_storage)};
+    (void) osMutexNew(&mutex_attrs);
+  }
 }
 
-void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
+static inline void ul_ulog_send_critical(ulog_level_t level, const char *filename, char *msg)
 {
   if (xULogQueue == NULL || msg == NULL)
   {
     return;
   }
 
-  char logBuffer[MAX_LOG_MESSAGE_SIZE];
+  static char logBuffer[MAX_LOG_MESSAGE_SIZE];
   int len;
   size_t msg_len = strlen(msg);
 
@@ -135,11 +144,18 @@ void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
   }
 }
 
+void ul_ulog_send(ulog_level_t level, const char *filename, char *msg)
+{
+	ULOG_LOCK();
+	ul_ulog_send_critical(level, filename, msg);
+	ULOG_UNLOCK();
+}
+
 static void ulogTask(void *argument)
 {
   for (;;)
   {
-    char logMessage[MAX_LOG_MESSAGE_SIZE];
+    static char logMessage[MAX_LOG_MESSAGE_SIZE];
     BaseType_t result = xQueueReceive(xULogQueue, logMessage, portMAX_DELAY);
 
     if (result == pdTRUE)
