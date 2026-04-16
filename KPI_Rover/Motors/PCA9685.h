@@ -3,8 +3,9 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
-void PCA9685_Init(void);
+bool PCA9685_Init(void);
 void PCA9685_SetPWM(uint8_t channel, uint16_t on, uint16_t off);
 void PCA9685_SetPin(uint8_t channel, uint8_t val);
 

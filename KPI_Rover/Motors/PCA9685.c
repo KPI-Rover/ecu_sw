@@ -16,15 +16,23 @@ extern I2C_HandleTypeDef hi2c3;
 /**
  * Helper: Write a single byte to a register.
  */
-static void pca9685_write(uint8_t reg, uint8_t data)
+#define pca9685_write(reg, data) do \
+	{ \
+        if (pca9685_write_i2c(reg, data) == false) \
+        { \
+            return false; \
+        } \
+    } while (0)
+
+static bool pca9685_write_i2c(uint8_t reg, uint8_t data)
 {
-    HAL_I2C_Mem_Write(&hi2c3,
-                      PCA9685_ADDR,
-                      reg,
-                      I2C_MEMADD_SIZE_8BIT,
-                      &data,
-                      1,
-                      HAL_MAX_DELAY);
+    return HAL_I2C_Mem_Write(&hi2c3,
+                             PCA9685_ADDR,
+                             reg,
+                             I2C_MEMADD_SIZE_8BIT,
+                             &data,
+                             1,
+                             10) == HAL_OK;
 }
 
 /**
@@ -53,7 +61,7 @@ static void pca9685_write4(uint8_t reg, uint16_t on, uint16_t off)
  * Initialize the PCA9685 chip.
  * Setup frequency and enable auto-increment mode.
  */
-void PCA9685_Init(void)
+bool PCA9685_Init(void)
 {
     /* 1. Reset device (Wake up) */
     pca9685_write(MODE1, 0x00);
@@ -77,6 +85,8 @@ void PCA9685_Init(void)
      */
     pca9685_write(MODE1, 0xA1);
     HAL_Delay(5);
+
+    return true;
 }
 
 /**

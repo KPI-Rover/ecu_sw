@@ -5,6 +5,7 @@
 #include "Motors/PCA9685.h"
 #include <Database/ulDatabase.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "usbd_cdc_if.h"
 
@@ -299,7 +300,10 @@ void ulMotorsController_Task(void* argument)
 
     ulMotorsController_Init(&g_motors_ctrl);
 
-    PCA9685_Init();
+    if (!PCA9685_Init()) {
+       ULOG_ERROR("Failed to initialize PCA9685");
+       osThreadExit();
+    }
 
     const osTimerAttr_t timer_attrs = {
    	   .name = "Motors_Timer"
