@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define LOG_QUEUE_LENGTH    10
+#define LOG_QUEUE_LENGTH    20
 #define MAX_LOG_MESSAGE_SIZE 256
 
 static void ulogTask(void *argument);
