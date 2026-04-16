@@ -59,8 +59,7 @@ static const osThreadAttr_t ulogTask_attributes = {
 
 
 void ul_ulog_init()
-{ 
-
+{
   xULogQueue = xQueueCreateStatic(LOG_QUEUE_LENGTH, MAX_LOG_MESSAGE_SIZE,
                                ucUlogQueueStorage, &xUlogQueueBuffer);
   if (xULogQueue == NULL)
