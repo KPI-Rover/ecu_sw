@@ -61,7 +61,7 @@ void UARTTransport_receive(uint8_t * const buf, uint8_t * const size)
 {
 	static uint8_t recvBuffer[UART_TRANSPORT_RECV_BUFFER_SIZE];
 
-	(void) osMessageQueueGet(recvQ, recvBuffer, NULL, osWaitForever);
+	for ( ; osMessageQueueGet(recvQ, recvBuffer, NULL, 50) != osOK; drvUart_restart_receiver());
 
 	*size = recvBuffer[0] - 1;
 	memcpy(buf, recvBuffer + 1, *size);

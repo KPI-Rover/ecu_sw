@@ -128,6 +128,15 @@ bool drvUart_send(uint8_t * const buf)
 	return true;
 }
 
+void drvUart_restart_receiver(void)
+{
+	if (huart3.RxState != HAL_UART_STATE_BUSY_RX)
+	{
+		// at this point callback has swapped the buffer pointers
+		(void) HAL_UARTEx_ReceiveToIdle_DMA(&huart3, activeReceiveBuffer, DRV_UART_RECEIVE_BUFFER_SIZE);
+	}
+}
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	// first, relaunch hardware DMA reception on the other buffer
