@@ -10,6 +10,7 @@ bool drvUart_start(void);
 bool drvUart_set_on_rx_cplt(void (*f)(const uint8_t * const buffer));
 bool drvUart_set_on_tx_cplt(void (*f)(void));
 bool drvUart_send(uint8_t *buf);
+void drvUart_restart_receiver(void);
 
 
 #endif /* __DRV_UART_H */
