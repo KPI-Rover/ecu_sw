@@ -27,6 +27,10 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, FLOAT, true, 0.046f}, // MOTOR_RR_KP
 		{0, FLOAT, true, 0.013f}, // MOTOR_RR_KI
 		{0, FLOAT, true, 0.0001f}, // MOTOR_RR_KD
+		{0, INT32, true, 0}, // ADC_CAL_CH_11_OFFSET,
+		{0, INT32, true, 0}, // ADC_CAL_CH_TEMP_OFFSET,
+		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_11_SCALE,
+		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_TEMP_SCALE,
 		{0, INT32, false, 0}, // MOTOR_FL_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_FR_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_RL_SETPOINT,
@@ -54,10 +58,6 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, UINT8, false, 0}, // ADC_CALIBRATION_START,
 		{0, UINT8, false, 0}, // ADC_CALIBRATION_POINT,
 		{0, FLOAT, false, 0}, // ADC_CALIBRATION_POINT_VALUE,
-		{0, INT32, true, 0}, // ADC_CAL_CH_11_OFFSET,
-		{0, INT32, true, 0}, // ADC_CAL_CH_TEMP_OFFSET,
-		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_11_SCALE,
-		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_TEMP_SCALE,
 		{0, UINT8, false, 0}, // ADC_CALIBRATION_CHANNEL_ID
 		{0, FLOAT, false, 0}, // PARAM_BATTERY_VOLTAGE,
 		{0, FLOAT, false, 0}, // PARAM_MCU_TEMPERATURE
