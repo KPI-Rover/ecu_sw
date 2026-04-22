@@ -131,7 +131,7 @@ bool drvUart_send(uint8_t * const buf)
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	// first, relaunch hardware DMA reception on the other buffer
-	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, sideReceiveBuffer, DRV_UART_RECEIVE_BUFFER_SIZE);
+	(void) HAL_UARTEx_ReceiveToIdle_DMA(&huart3, sideReceiveBuffer, DRV_UART_RECEIVE_BUFFER_SIZE);
 
 	// then update local references
 	{
@@ -144,7 +144,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	}
 
 	if (on_rx_cplt == NULL)
+	{
 		return;
+	}
 
 	// then process every received packet
 	{
@@ -153,16 +155,22 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		for (offset = 0; offset < Size; offset += 3 + sideReceiveBuffer[1 + offset]) {
 			// verify packet is not too short (1 byte for size, 1+ byte(s) for command and 2 bytes for CRC16)
 			if (sideReceiveBuffer[1 + offset] < 4)
+			{
 				// drop ALL remaining packets on failure
 				return;
+			}
 
 			// verify packet length does not overflow received frame size
 			if (1 + offset + sideReceiveBuffer[1 + offset] > Size)
+			{
 				return;
+			}
 
 			// verify packet is not corrupted
 			if (crc16(sideReceiveBuffer + 1 + offset, sideReceiveBuffer[1 + offset]))
+			{
 				return;
+			}
 
 			// exclude size of CRC16
 			sideReceiveBuffer[1 + offset] -= 2;
@@ -173,9 +181,12 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	}
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
 	if (on_tx_cplt == NULL)
+	{
 		return;
+	}
 
 	on_tx_cplt();
 }
