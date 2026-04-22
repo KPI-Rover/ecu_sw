@@ -54,7 +54,7 @@ static void pca9685_write4(uint8_t reg, uint16_t on, uint16_t off)
                       I2C_MEMADD_SIZE_8BIT,
                       buf,
                       4,
-                      HAL_MAX_DELAY);
+                      10);
 }
 
 /**
