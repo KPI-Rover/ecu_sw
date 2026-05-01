@@ -41,6 +41,7 @@ static void dispatch_set_motor_speed(void)
 	static int32_t target_value;
 
 	target_value = switch_endianness_int32(&(recvBuffer[2])); // big (network) to little (host)
+	target_value /= 100;
 
 	switch (recvBuffer[1]) {
 	case 0:
@@ -72,10 +73,10 @@ static void dispatch_set_all_motors_speed(void)
 	target_value_fr = switch_endianness_int32(&(recvBuffer[9]));
 	target_value_rr = switch_endianness_int32(&(recvBuffer[13]));
 
-	ulDatabase_setInt32(MOTOR_FL_SETPOINT, target_value_fl);
-	ulDatabase_setInt32(MOTOR_RL_SETPOINT, target_value_rl);
-	ulDatabase_setInt32(MOTOR_FR_SETPOINT, target_value_fr);
-	ulDatabase_setInt32(MOTOR_RR_SETPOINT, target_value_rr);
+	ulDatabase_setInt32(MOTOR_FL_SETPOINT, target_value_fl / 100);
+	ulDatabase_setInt32(MOTOR_RL_SETPOINT, target_value_rl / 100);
+	ulDatabase_setInt32(MOTOR_FR_SETPOINT, target_value_fr / 100);
+	ulDatabase_setInt32(MOTOR_RR_SETPOINT, target_value_rr / 100);
 
 	sendBuffer[0] = 0x03;
 	sendBuffer[1] = 0x00;
