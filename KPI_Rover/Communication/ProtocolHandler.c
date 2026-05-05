@@ -160,6 +160,14 @@ static void dispatch_get_imu(void)
 	UARTTransport_send(sendBuffer, 53);
 }
 
+static void ProtocolHandler_emergencyStop(void)
+{
+	ulDatabase_setInt32(MOTOR_FL_SETPOINT, 0);
+	ulDatabase_setInt32(MOTOR_RL_SETPOINT, 0);
+	ulDatabase_setInt32(MOTOR_FR_SETPOINT, 0);
+	ulDatabase_setInt32(MOTOR_RR_SETPOINT, 0);
+}
+
 static const void (*dispatch_table[])(void) = {
 	dispatch_not_a_command,
 	dispatch_get_api_version,
@@ -177,7 +185,11 @@ void ProtocolHandler_processTask(void *d)
 	UARTTransport_init();
 
 	for ( ; ; ) {
-		UARTTransport_receive(recvBuffer, &recvSize);
+		if (!UARTTransport_receive(recvBuffer, &recvSize))
+		{
+			ProtocolHandler_emergencyStop();
+			continue;
+		}
 
 		if (recvBuffer[0] >= LEN(dispatch_table))
 			continue;

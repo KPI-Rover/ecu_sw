@@ -57,14 +57,22 @@ void UARTTransport_init(void)
 	(void) osThreadNew(UARTTransport_sendTask, NULL, &ta);
 }
 
-void UARTTransport_receive(uint8_t * const buf, uint8_t * const size)
+bool UARTTransport_receive(uint8_t * const buf, uint8_t * const size)
 {
 	static uint8_t recvBuffer[UART_TRANSPORT_RECV_BUFFER_SIZE];
 
-	for ( ; osMessageQueueGet(recvQ, recvBuffer, NULL, 50) != osOK; drvUart_restart_receiver());
+	if (osMessageQueueGet(recvQ, recvBuffer, NULL, 50) != osOK)
+	{
+		return false;
+	}
+	else
+	{
+		*size = recvBuffer[0] - 1;
+		memcpy(buf, recvBuffer + 1, *size);
 
-	*size = recvBuffer[0] - 1;
-	memcpy(buf, recvBuffer + 1, *size);
+		return true;
+	}
+
 }
 
 void UARTTransport_send(const uint8_t * const buf, const uint8_t size)
