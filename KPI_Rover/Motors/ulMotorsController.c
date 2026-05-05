@@ -20,36 +20,36 @@ MotorsCtrlState_t g_motors_state = MOTORS_STATE_INIT;
 
 static const uint16_t key_rpm[ULMOTORS_NUM_MOTORS] = {
     MOTOR_FL_RPM,
-    MOTOR_FR_RPM,
     MOTOR_RL_RPM,
+    MOTOR_FR_RPM,
     MOTOR_RR_RPM
 };
 
 static const uint16_t key_kp[ULMOTORS_NUM_MOTORS] = {
 	MOTOR_FL_KP,
-	MOTOR_FR_KP,
 	MOTOR_RL_KP,
+	MOTOR_FR_KP,
 	MOTOR_RR_KP
 };
 
 static const uint16_t key_ki[ULMOTORS_NUM_MOTORS] = {
 	MOTOR_FL_KI,
-	MOTOR_FR_KI,
 	MOTOR_RL_KI,
+	MOTOR_FR_KI,
 	MOTOR_RR_KI
 };
 
 static const uint16_t key_kd[ULMOTORS_NUM_MOTORS] = {
 	MOTOR_FL_KD,
-	MOTOR_FR_KD,
 	MOTOR_RL_KD,
+	MOTOR_FR_KD,
 	MOTOR_RR_KD
 };
 
 static const uint16_t key_setpoint[ULMOTORS_NUM_MOTORS] = {
 	MOTOR_FL_SETPOINT,
-	MOTOR_FR_SETPOINT,
 	MOTOR_RL_SETPOINT,
+	MOTOR_FR_SETPOINT,
 	MOTOR_RR_SETPOINT
 };
 
