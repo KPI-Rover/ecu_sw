@@ -32,12 +32,12 @@ static struct ulDatabase_ParamMetadata ulDatabase_params[] = {
 		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_11_SCALE,
 		{0, FLOAT, true, 0.0f}, // ADC_CAL_CH_TEMP_SCALE,
 		{0, INT32, false, 0}, // MOTOR_FL_SETPOINT,
-		{0, INT32, false, 0}, // MOTOR_FR_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_RL_SETPOINT,
+		{0, INT32, false, 0}, // MOTOR_FR_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_RR_SETPOINT,
 		{0, INT32, false, 0}, // MOTOR_FL_RPM,
-		{0, INT32, false, 0}, // MOTOR_FR_RPM,
 		{0, INT32, false, 0}, // MOTOR_RL_RPM,
+		{0, INT32, false, 0}, // MOTOR_FR_RPM,
 		{0, INT32, false, 0}, // MOTOR_RR_RPM,
 		{0, FLOAT, false, 0.0f}, // IMU_ACCEL_X
 		{0, FLOAT, false, 0.0f}, // IMU_ACCEL_Y
